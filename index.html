@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoNode &mdash; Carbon-Aware Forecasting</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0f1c;
+            --bg-card: #111827;
+            --bg-card-hover: #1a2332;
+            --border: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --green-accent: #22c55e;
+            --green-glow: rgba(34, 197, 94, 0.15);
+            --green-dark: #166534;
+            --blue-accent: #3b82f6;
+            --amber-accent: #f59e0b;
+            --red-accent: #ef4444;
+            --gradient-green: linear-gradient(135deg, #22c55e, #16a34a);
+            --gradient-blue: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Header */
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 20px 0;
+            background: linear-gradient(180deg, rgba(34,197,94,0.03) 0%, transparent 100%);
+        }
+
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-green);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 0 20px rgba(34,197,94,0.3);
+        }
+
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .logo h1 span { color: var(--green-accent); }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: rgba(34,197,94,0.1);
+            border: 1px solid rgba(34,197,94,0.2);
+            border-radius: 20px;
+            font-size: 0.78rem;
+            color: var(--green-accent);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--green-accent);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            padding: 24px 0;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: background 0.2s;
+        }
+
+        .stat-card:hover { background: var(--bg-card-hover); }
+
+        .stat-label {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .stat-value.green { color: var(--green-accent); }
+        .stat-value.blue { color: var(--blue-accent); }
+        .stat-value.amber { color: var(--amber-accent); }
+
+        .stat-sub {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Chart Section */
+        .chart-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .chart-legend {
+            display: flex;
+            gap: 16px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+        }
+
+        /* Green Windows */
+        .windows-section {
+            margin-bottom: 24px;
+        }
+
+        .windows-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .window-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .window-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(34,197,94,0.1);
+        }
+
+        .window-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-green);
+        }
+
+        .window-rank {
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            width: 28px;
+            height: 28px;
+            background: var(--green-glow);
+            border: 1px solid rgba(34,197,94,0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--green-accent);
+        }
+
+        .window-time {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            padding-right: 40px;
+        }
+
+        .window-date {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .window-pct {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: var(--green-glow);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--green-accent);
+        }
+
+        /* History Table */
+        .history-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 40px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        th {
+            text-align: left;
+            padding: 10px 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.72rem;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+
+        .pct-bar-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pct-bar {
+            flex: 1;
+            height: 6px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 3px;
+            overflow: hidden;
+            max-width: 120px;
+        }
+
+        .pct-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.6s ease;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 20px 0;
+            text-align: center;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 20px;
+        }
+
+        footer a {
+            color: var(--green-accent);
+            text-decoration: none;
+        }
+
+        /* Loading / Error States */
+        .loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+            gap: 12px;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border);
+            border-top-color: var(--green-accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .error-state {
+            padding: 40px;
+            text-align: center;
+            color: var(--red-accent);
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .stats-bar { grid-template-columns: 1fr 1fr; }
+            .stat-value { font-size: 1.4rem; }
+            .chart-container { height: 260px; }
+            .windows-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="container header-inner">
+        <div class="logo">
+            <div class="logo-icon">&#9889;</div>
+            <h1>Eco<span>Node</span></h1>
+        </div>
+        <div class="header-meta">
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                <span id="pipeline-status">Loading...</span>
+            </div>
+            <span id="last-updated"></span>
+        </div>
+    </div>
+</header>
+
+<main class="container">
+
+    <!-- Stats -->
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="stat-label">Current Renewable %</div>
+            <div class="stat-value green" id="stat-current">--</div>
+            <div class="stat-sub" id="stat-current-sub">Loading latest data...</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">48h Forecast Avg</div>
+            <div class="stat-value blue" id="stat-avg">--</div>
+            <div class="stat-sub">Across all forecast hours</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Best Green Window</div>
+            <div class="stat-value green" id="stat-best-window">--</div>
+            <div class="stat-sub" id="stat-best-time">Optimal scheduling block</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Peak Renewable %</div>
+            <div class="stat-value amber" id="stat-peak">--</div>
+            <div class="stat-sub" id="stat-peak-time">In forecast window</div>
+        </div>
+    </div>
+
+    <!-- 48-Hour Forecast Chart -->
+    <div class="chart-section">
+        <div class="section-header">
+            <h2 class="section-title">48-Hour Renewable Energy Forecast</h2>
+            <div class="chart-legend">
+                <div class="legend-item">
+                    <div class="legend-dot" style="background: #22c55e;"></div>
+                    Predicted %
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background: rgba(34,197,94,0.15);"></div>
+                    Confidence Band
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background: rgba(34,197,94,0.25); border: 2px dashed #22c55e; width: 16px; height: 10px; border-radius: 2px;"></div>
+                    Green Windows
+                </div>
+            </div>
+        </div>
+        <div class="chart-container" id="chart-wrapper">
+            <div class="loading-state" id="chart-loading">
+                <div class="spinner"></div>
+                <span>Loading forecast data...</span>
+            </div>
+            <canvas id="forecastChart" style="display:none;"></canvas>
+        </div>
+    </div>
+
+    <!-- Green Compute Windows -->
+    <div class="windows-section">
+        <h2 class="section-title">Recommended Green Compute Windows</h2>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">
+            Schedule your AWS batch workloads during these windows to minimize carbon footprint.
+        </p>
+        <div class="windows-grid" id="windows-grid">
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <span>Calculating optimal windows...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent History Table -->
+    <div class="history-section">
+        <div class="section-header">
+            <h2 class="section-title">Recent Grid History (Last 24h)</h2>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Time (UTC)</th>
+                    <th>Total Gen (MWh)</th>
+                    <th>Wind (MWh)</th>
+                    <th>Solar (MWh)</th>
+                    <th>Renewable %</th>
+                </tr>
+            </thead>
+            <tbody id="history-body">
+                <tr>
+                    <td colspan="5" class="loading-state" style="padding:30px;">
+                        <div class="spinner"></div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</main>
+
+<footer>
+    <div class="container">
+        EcoNode &mdash; Carbon-Aware Forecasting for AWS Jupyter Workflows<br>
+        Data from <a href="https://www.eia.gov/opendata/" target="_blank">US EIA</a>.
+        Built for green cloud computing.
+    </div>
+</footer>
+
+<script>
+// =====================================================================
+// Configuration  -- Replace these with your Supabase project values
+// =====================================================================
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const REGION = 'US48';
+
+// =====================================================================
+// Supabase REST helper
+// =====================================================================
+async function supabaseGet(table, query = '') {
+    const url = `${SUPABASE_URL}/rest/v1/${table}?${query}`;
+    const resp = await fetch(url, {
+        headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+    });
+    if (!resp.ok) throw new Error(`Supabase ${table}: ${resp.status}`);
+    return resp.json();
+}
+
+// =====================================================================
+// Format helpers
+// =====================================================================
+function fmtPct(v) { return v != null ? v.toFixed(1) + '%' : '--'; }
+function fmtNum(v) { return v != null ? Math.round(v).toLocaleString() : '--'; }
+
+function fmtTime(iso) {
+    const d = new Date(iso);
+    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'UTC' });
+}
+
+function fmtDateTime(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-US', {
+        weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC'
+    });
+}
+
+function pctColor(v) {
+    if (v >= 30) return '#22c55e';
+    if (v >= 20) return '#f59e0b';
+    return '#ef4444';
+}
+
+// =====================================================================
+// Load and render
+// =====================================================================
+let forecastChart = null;
+
+async function loadDashboard() {
+    try {
+        const [forecasts, windows, history, runs] = await Promise.all([
+            supabaseGet('forecasts', `region=eq.${REGION}&order=forecast_time.asc&limit=48`),
+            supabaseGet('green_windows', `region=eq.${REGION}&order=rank.asc&limit=3`),
+            supabaseGet('grid_history', `region=eq.${REGION}&order=timestamp_utc.desc&limit=24`),
+            supabaseGet('pipeline_runs', 'order=started_at.desc&limit=1'),
+        ]);
+
+        renderStats(forecasts, windows, history);
+        renderChart(forecasts, windows);
+        renderWindows(windows);
+        renderHistory(history);
+        renderPipelineStatus(runs);
+    } catch (err) {
+        console.error('Dashboard load error:', err);
+        document.getElementById('pipeline-status').textContent = 'Error';
+        document.getElementById('chart-loading').innerHTML =
+            `<div class="error-state">Failed to load data. Check console for details.<br><small>${err.message}</small></div>`;
+    }
+}
+
+function renderStats(forecasts, windows, history) {
+    // Current renewable %
+    if (history.length > 0) {
+        const latest = history[0];
+        document.getElementById('stat-current').textContent = fmtPct(latest.renewable_percentage);
+        document.getElementById('stat-current-sub').textContent =
+            `As of ${fmtTime(latest.timestamp_utc)} UTC`;
+    }
+
+    // Forecast average
+    if (forecasts.length > 0) {
+        const avg = forecasts.reduce((s, f) => s + f.renewable_percentage_predicted, 0) / forecasts.length;
+        document.getElementById('stat-avg').textContent = fmtPct(avg);
+
+        // Peak
+        const peak = forecasts.reduce((max, f) =>
+            f.renewable_percentage_predicted > max.renewable_percentage_predicted ? f : max, forecasts[0]);
+        document.getElementById('stat-peak').textContent = fmtPct(peak.renewable_percentage_predicted);
+        document.getElementById('stat-peak-time').textContent =
+            `At ${fmtTime(peak.forecast_time)} UTC`;
+    }
+
+    // Best window
+    if (windows.length > 0) {
+        document.getElementById('stat-best-window').textContent = fmtPct(windows[0].avg_renewable_percentage);
+        document.getElementById('stat-best-time').textContent =
+            `${fmtTime(windows[0].window_start)} – ${fmtTime(windows[0].window_end)} UTC`;
+    }
+}
+
+function renderChart(forecasts, windows) {
+    if (forecasts.length === 0) {
+        document.getElementById('chart-loading').innerHTML =
+            '<div class="error-state">No forecast data available yet.</div>';
+        return;
+    }
+
+    document.getElementById('chart-loading').style.display = 'none';
+    const canvas = document.getElementById('forecastChart');
+    canvas.style.display = 'block';
+
+    const labels = forecasts.map(f => new Date(f.forecast_time));
+    const predicted = forecasts.map(f => f.renewable_percentage_predicted);
+    const lower = forecasts.map(f => f.lower_bound);
+    const upper = forecasts.map(f => f.upper_bound);
+
+    // Mark green window hours
+    const windowSet = new Set();
+    windows.forEach(w => {
+        const start = new Date(w.window_start).getTime();
+        const end = new Date(w.window_end).getTime();
+        forecasts.forEach(f => {
+            const t = new Date(f.forecast_time).getTime();
+            if (t >= start && t < end) windowSet.add(f.forecast_time);
+        });
+    });
+
+    const bgColors = forecasts.map(f =>
+        windowSet.has(f.forecast_time) ? 'rgba(34,197,94,0.25)' : 'transparent'
+    );
+
+    const ctx = canvas.getContext('2d');
+    forecastChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Upper Bound',
+                    data: upper,
+                    borderColor: 'transparent',
+                    backgroundColor: 'rgba(34,197,94,0.08)',
+                    fill: '+1',
+                    pointRadius: 0,
+                    tension: 0.3,
+                },
+                {
+                    label: 'Lower Bound',
+                    data: lower,
+                    borderColor: 'transparent',
+                    backgroundColor: 'rgba(34,197,94,0.08)',
+                    fill: false,
+                    pointRadius: 0,
+                    tension: 0.3,
+                },
+                {
+                    label: 'Predicted Renewable %',
+                    data: predicted,
+                    borderColor: '#22c55e',
+                    backgroundColor: 'rgba(34,197,94,0.1)',
+                    borderWidth: 2.5,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    pointHoverBackgroundColor: '#22c55e',
+                    tension: 0.3,
+                    fill: false,
+                },
+                {
+                    label: 'Green Window',
+                    data: predicted,
+                    backgroundColor: bgColors,
+                    borderColor: 'transparent',
+                    fill: 'origin',
+                    pointRadius: 0,
+                    tension: 0.3,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1e293b',
+                    titleColor: '#f1f5f9',
+                    bodyColor: '#94a3b8',
+                    borderColor: '#334155',
+                    borderWidth: 1,
+                    padding: 12,
+                    callbacks: {
+                        title: (items) => {
+                            const d = new Date(items[0].parsed.x);
+                            return d.toLocaleString('en-US', {
+                                weekday: 'short', month: 'short', day: 'numeric',
+                                hour: '2-digit', minute: '2-digit', timeZone: 'UTC'
+                            }) + ' UTC';
+                        },
+                        label: (item) => {
+                            if (item.datasetIndex === 2) {
+                                return `Renewable: ${item.parsed.y.toFixed(1)}%`;
+                            }
+                            return null;
+                        },
+                    },
+                    filter: (item) => item.datasetIndex === 2,
+                },
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { unit: 'hour', displayFormats: { hour: 'MMM d, ha' }, tooltipFormat: 'PPpp' },
+                    grid: { color: 'rgba(255,255,255,0.04)' },
+                    ticks: { color: '#64748b', maxTicksLimit: 12, font: { size: 11 } },
+                },
+                y: {
+                    min: 0,
+                    suggestedMax: 50,
+                    grid: { color: 'rgba(255,255,255,0.04)' },
+                    ticks: {
+                        color: '#64748b',
+                        callback: v => v + '%',
+                        font: { size: 11 },
+                    },
+                    title: { display: true, text: 'Renewable %', color: '#64748b' },
+                },
+            },
+        },
+    });
+}
+
+function renderWindows(windows) {
+    const grid = document.getElementById('windows-grid');
+
+    if (windows.length === 0) {
+        grid.innerHTML = '<div class="error-state">No green windows calculated yet. Run the pipeline first.</div>';
+        return;
+    }
+
+    grid.innerHTML = windows.map(w => `
+        <div class="window-card">
+            <div class="window-rank">#${w.rank}</div>
+            <div class="window-time">${fmtTime(w.window_start)} &ndash; ${fmtTime(w.window_end)} UTC</div>
+            <div class="window-date">${fmtDateTime(w.window_start)}</div>
+            <div class="window-pct">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+                ${fmtPct(w.avg_renewable_percentage)} avg renewable
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderHistory(history) {
+    const tbody = document.getElementById('history-body');
+
+    if (history.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="error-state">No history data yet.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = history.map(h => {
+        const pct = h.renewable_percentage || 0;
+        const color = pctColor(pct);
+        return `
+            <tr>
+                <td>${fmtTime(h.timestamp_utc)}</td>
+                <td>${fmtNum(h.total_generation_mwh)}</td>
+                <td>${fmtNum(h.wind_generation_mwh)}</td>
+                <td>${fmtNum(h.solar_generation_mwh)}</td>
+                <td>
+                    <div class="pct-bar-cell">
+                        <span style="color:${color}; font-weight:600; min-width:45px;">${fmtPct(pct)}</span>
+                        <div class="pct-bar">
+                            <div class="pct-bar-fill" style="width:${Math.min(pct * 2, 100)}%; background:${color};"></div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function renderPipelineStatus(runs) {
+    const el = document.getElementById('pipeline-status');
+    const updated = document.getElementById('last-updated');
+
+    if (runs.length === 0) {
+        el.textContent = 'No runs yet';
+        return;
+    }
+
+    const run = runs[0];
+    el.textContent = run.status === 'success' ? 'Pipeline Healthy' : run.status;
+
+    if (run.completed_at) {
+        const d = new Date(run.completed_at);
+        updated.textContent = `Updated ${d.toLocaleDateString('en-US', {
+            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC'
+        })} UTC`;
+    }
+}
+
+// Boot
+loadDashboard();
+</script>
+
+</body>
+</html>
