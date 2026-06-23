@@ -13,7 +13,7 @@ permissions:
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     env:
       EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
