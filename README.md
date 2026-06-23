@@ -2,6 +2,8 @@
 
 An end-to-end, zero-maintenance MLOps pipeline that ingests live US electrical grid data across multiple regions, uses weather-enhanced Prophet forecasting to predict hourly renewable energy percentage and carbon intensity, and displays optimal "green compute windows" on a public dashboard.
 
+**Demo** -> https://kavyasridhar1501.github.io/EcoNode/
+
 ## Architecture
 
 ```
