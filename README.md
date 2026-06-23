@@ -49,62 +49,6 @@ GitHub Pages (index.html) ──▶ Multi-region Chart.js dashboard
 └── README.md
 ```
 
-## Setup Instructions
-
-### 1. Get API Keys
-
-**EIA API Key:**
-1. Go to https://www.eia.gov/opendata/register.php
-2. Register for a free account
-3. Copy your API key from the confirmation email
-
-**Supabase Project:**
-1. Go to https://supabase.com and create a free account
-2. Create a new project (choose any region, set a database password)
-3. Go to **Settings → API Keys** and note:
-   - **Project URL** (visible in the browser URL: `https://<project-id>.supabase.co`)
-   - **Publishable key** (for the frontend — safe to expose)
-   - **Secret key** (for the pipeline — keep this secret)
-
-### 2. Set Up Supabase Tables
-
-**New project:** Run `sql/schema.sql` in the Supabase SQL Editor.
-
-**Upgrading from v1:** Run `sql/migrate_v2.sql` instead — it adds the new columns and `model_metrics` table without dropping existing data.
-
-### 3. Configure the Frontend
-
-Edit `index.html` and replace the two placeholder values:
-
-```javascript
-const SUPABASE_URL = 'https://YOUR-PROJECT-ID.supabase.co';
-const SUPABASE_ANON_KEY = 'your-publishable-key-here';
-```
-
-### 4. Configure GitHub Repository Secrets
-
-Go to your GitHub repo → **Settings → Secrets and variables → Actions** and add:
-
-| Secret Name | Value |
-|---|---|
-| `EIA_API_KEY` | Your EIA API key |
-| `SUPABASE_URL` | Your Supabase project URL |
-| `SUPABASE_SERVICE_KEY` | Your Supabase **Secret key** |
-
-### 5. Enable GitHub Pages
-
-1. Go to **Settings → Pages**
-2. Source: **Deploy from a branch**
-3. Branch: `main`, folder: `/ (root)`
-4. Your dashboard will be at `https://<username>.github.io/EcoNode/`
-
-### 6. Test the Pipeline
-
-1. Go to **Actions → EcoNode Daily Pipeline → Run workflow**
-2. The first run processes 3 regions (~8-12 minutes)
-3. Refresh your dashboard to see the data
-4. Model evaluation metrics appear after the second run (needs previous forecasts to compare against)
-
 ## How It Works
 
 1. **Data Ingestion:** Pulls 30 days of hourly generation data per region from the EIA API v2 (wind, solar, total) and merges hourly weather data from Open-Meteo.
