@@ -84,7 +84,7 @@ def fetch_eia_series(fuel_type: str | None, start: str, end: str) -> pd.DataFram
             break
 
         all_rows.extend(rows)
-        total = data["response"].get("total", len(all_rows))
+        total = int(data["response"].get("total", len(all_rows)))
         offset += len(rows)
 
         if offset >= total:
