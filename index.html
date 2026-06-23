@@ -17,12 +17,11 @@
             --text-muted: #64748b;
             --green-accent: #22c55e;
             --green-glow: rgba(34, 197, 94, 0.15);
-            --green-dark: #166534;
             --blue-accent: #3b82f6;
             --amber-accent: #f59e0b;
             --red-accent: #ef4444;
+            --purple-accent: #a855f7;
             --gradient-green: linear-gradient(135deg, #22c55e, #16a34a);
-            --gradient-blue: linear-gradient(135deg, #3b82f6, #2563eb);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -35,13 +34,8 @@
             line-height: 1.6;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
 
-        /* Header */
         header {
             border-bottom: 1px solid var(--border);
             padding: 20px 0;
@@ -56,44 +50,42 @@
             gap: 12px;
         }
 
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+        .logo { display: flex; align-items: center; gap: 12px; }
 
         .logo-icon {
-            width: 40px;
-            height: 40px;
+            width: 40px; height: 40px;
             background: var(--gradient-green);
             border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             font-size: 20px;
             box-shadow: 0 0 20px rgba(34,197,94,0.3);
         }
 
-        .logo h1 {
-            font-size: 1.4rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
+        .logo h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
         .logo h1 span { color: var(--green-accent); }
 
-        .header-meta {
+        .header-controls {
             display: flex;
             align-items: center;
             gap: 16px;
-            font-size: 0.85rem;
-            color: var(--text-muted);
+            flex-wrap: wrap;
         }
 
+        .region-select {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .region-select:focus { border-color: var(--green-accent); }
+
         .status-badge {
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            display: flex; align-items: center; gap: 6px;
             padding: 4px 12px;
             background: rgba(34,197,94,0.1);
             border: 1px solid rgba(34,197,94,0.2);
@@ -103,22 +95,20 @@
         }
 
         .status-dot {
-            width: 6px;
-            height: 6px;
+            width: 6px; height: 6px;
             background: var(--green-accent);
             border-radius: 50%;
             animation: pulse 2s infinite;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-        /* Stats Bar */
+        .header-meta { font-size: 0.78rem; color: var(--text-muted); }
+
+        /* Stats */
         .stats-bar {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 16px;
             padding: 24px 0;
         }
@@ -127,37 +117,30 @@
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 20px;
+            padding: 18px;
             transition: background 0.2s;
         }
 
         .stat-card:hover { background: var(--bg-card-hover); }
 
         .stat-label {
-            font-size: 0.78rem;
+            font-size: 0.72rem;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
-        .stat-value {
-            font-size: 1.8rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
+        .stat-value { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; }
         .stat-value.green { color: var(--green-accent); }
         .stat-value.blue { color: var(--blue-accent); }
         .stat-value.amber { color: var(--amber-accent); }
+        .stat-value.purple { color: var(--purple-accent); }
+        .stat-value.red { color: var(--red-accent); }
 
-        .stat-sub {
-            font-size: 0.78rem;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
+        .stat-sub { font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px; }
 
-        /* Chart Section */
+        /* Sections */
         .chart-section {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -175,43 +158,26 @@
             gap: 8px;
         }
 
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
+        .section-title { font-size: 1.1rem; font-weight: 600; }
 
         .chart-legend {
-            display: flex;
-            gap: 16px;
-            font-size: 0.8rem;
+            display: flex; gap: 14px;
+            font-size: 0.78rem;
             color: var(--text-secondary);
+            flex-wrap: wrap;
         }
 
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
 
-        .legend-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 3px;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 350px;
-        }
+        .chart-container { position: relative; height: 350px; }
 
         /* Green Windows */
-        .windows-section {
-            margin-bottom: 24px;
-        }
+        .windows-section { margin-bottom: 24px; }
 
         .windows-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 16px;
             margin-top: 16px;
         }
@@ -234,53 +200,72 @@
         .window-card::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
+            top: 0; left: 0; right: 0;
             height: 3px;
             background: var(--gradient-green);
         }
 
         .window-rank {
-            position: absolute;
-            top: 14px;
-            right: 16px;
-            width: 28px;
-            height: 28px;
+            position: absolute; top: 14px; right: 16px;
+            width: 28px; height: 28px;
             background: var(--green-glow);
             border: 1px solid rgba(34,197,94,0.3);
             border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.8rem; font-weight: 700;
             color: var(--green-accent);
         }
 
-        .window-time {
-            font-size: 1.05rem;
-            font-weight: 600;
-            margin-bottom: 4px;
-            padding-right: 40px;
-        }
+        .window-time { font-size: 1.05rem; font-weight: 600; margin-bottom: 4px; padding-right: 40px; }
+        .window-date { font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 10px; }
 
-        .window-date {
-            font-size: 0.82rem;
-            color: var(--text-secondary);
-            margin-bottom: 12px;
-        }
+        .window-badges { display: flex; gap: 8px; flex-wrap: wrap; }
 
-        .window-pct {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            background: var(--green-glow);
+        .window-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 5px 12px;
             border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
+            font-size: 0.82rem; font-weight: 600;
+        }
+
+        .window-badge.green {
+            background: var(--green-glow);
             color: var(--green-accent);
+        }
+
+        .window-badge.carbon {
+            background: rgba(168,85,247,0.1);
+            color: var(--purple-accent);
+        }
+
+        /* Model Accuracy */
+        .accuracy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .accuracy-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .accuracy-card .metric-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--blue-accent);
+        }
+
+        .accuracy-card .metric-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-top: 2px;
         }
 
         /* History Table */
@@ -293,25 +278,21 @@
             overflow-x: auto;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 
         th {
             text-align: left;
-            padding: 10px 14px;
+            padding: 10px 12px;
             color: var(--text-muted);
             font-weight: 500;
             text-transform: uppercase;
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             letter-spacing: 0.05em;
             border-bottom: 1px solid var(--border);
         }
 
         td {
-            padding: 12px 14px;
+            padding: 10px 12px;
             border-bottom: 1px solid var(--border);
             color: var(--text-secondary);
         }
@@ -319,28 +300,18 @@
         tr:last-child td { border-bottom: none; }
         tr:hover td { background: rgba(255,255,255,0.02); }
 
-        .pct-bar-cell {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .pct-bar-cell { display: flex; align-items: center; gap: 8px; }
 
         .pct-bar {
-            flex: 1;
-            height: 6px;
+            flex: 1; height: 5px;
             background: rgba(255,255,255,0.05);
             border-radius: 3px;
             overflow: hidden;
-            max-width: 120px;
+            max-width: 100px;
         }
 
-        .pct-bar-fill {
-            height: 100%;
-            border-radius: 3px;
-            transition: width 0.6s ease;
-        }
+        .pct-bar-fill { height: 100%; border-radius: 3px; }
 
-        /* Footer */
         footer {
             border-top: 1px solid var(--border);
             padding: 20px 0;
@@ -350,25 +321,17 @@
             margin-top: 20px;
         }
 
-        footer a {
-            color: var(--green-accent);
-            text-decoration: none;
-        }
+        footer a { color: var(--green-accent); text-decoration: none; }
 
-        /* Loading / Error States */
         .loading-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
             padding: 60px 20px;
-            color: var(--text-muted);
-            gap: 12px;
+            color: var(--text-muted); gap: 12px;
         }
 
         .spinner {
-            width: 32px;
-            height: 32px;
+            width: 32px; height: 32px;
             border: 3px solid var(--border);
             border-top-color: var(--green-accent);
             border-radius: 50%;
@@ -377,16 +340,11 @@
 
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        .error-state {
-            padding: 40px;
-            text-align: center;
-            color: var(--red-accent);
-        }
+        .error-state { padding: 40px; text-align: center; color: var(--red-accent); }
 
-        /* Responsive */
         @media (max-width: 640px) {
             .stats-bar { grid-template-columns: 1fr 1fr; }
-            .stat-value { font-size: 1.4rem; }
+            .stat-value { font-size: 1.3rem; }
             .chart-container { height: 260px; }
             .windows-grid { grid-template-columns: 1fr; }
         }
@@ -400,12 +358,17 @@
             <div class="logo-icon">&#9889;</div>
             <h1>Eco<span>Node</span></h1>
         </div>
-        <div class="header-meta">
+        <div class="header-controls">
+            <select class="region-select" id="region-select">
+                <option value="US48">US Lower 48</option>
+                <option value="CISO">California (CAISO)</option>
+                <option value="ERCO">Texas (ERCOT)</option>
+            </select>
             <div class="status-badge">
                 <div class="status-dot"></div>
                 <span id="pipeline-status">Loading...</span>
             </div>
-            <span id="last-updated"></span>
+            <span class="header-meta" id="last-updated"></span>
         </div>
     </div>
 </header>
@@ -417,40 +380,54 @@
         <div class="stat-card">
             <div class="stat-label">Current Renewable %</div>
             <div class="stat-value green" id="stat-current">--</div>
-            <div class="stat-sub" id="stat-current-sub">Loading latest data...</div>
+            <div class="stat-sub" id="stat-current-sub">Loading...</div>
         </div>
         <div class="stat-card">
             <div class="stat-label">48h Forecast Avg</div>
             <div class="stat-value blue" id="stat-avg">--</div>
-            <div class="stat-sub">Across all forecast hours</div>
+            <div class="stat-sub">Across forecast period</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Carbon Intensity</div>
+            <div class="stat-value purple" id="stat-carbon">--</div>
+            <div class="stat-sub" id="stat-carbon-sub">gCO2/kWh current</div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Best Green Window</div>
             <div class="stat-value green" id="stat-best-window">--</div>
-            <div class="stat-sub" id="stat-best-time">Optimal scheduling block</div>
+            <div class="stat-sub" id="stat-best-time">Optimal block</div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Peak Renewable %</div>
             <div class="stat-value amber" id="stat-peak">--</div>
-            <div class="stat-sub" id="stat-peak-time">In forecast window</div>
+            <div class="stat-sub" id="stat-peak-time">In forecast</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Model Accuracy</div>
+            <div class="stat-value blue" id="stat-mae">--</div>
+            <div class="stat-sub" id="stat-mae-sub">MAE (last eval)</div>
         </div>
     </div>
 
-    <!-- 48-Hour Forecast Chart -->
+    <!-- Forecast Chart -->
     <div class="chart-section">
         <div class="section-header">
-            <h2 class="section-title">48-Hour Renewable Energy Forecast</h2>
+            <h2 class="section-title">48-Hour Forecast with Recent Actuals</h2>
             <div class="chart-legend">
                 <div class="legend-item">
                     <div class="legend-dot" style="background: #22c55e;"></div>
-                    Predicted %
+                    Forecast
                 </div>
                 <div class="legend-item">
-                    <div class="legend-dot" style="background: rgba(34,197,94,0.15);"></div>
-                    Confidence Band
+                    <div class="legend-dot" style="background: #3b82f6;"></div>
+                    Actuals
                 </div>
                 <div class="legend-item">
-                    <div class="legend-dot" style="background: rgba(34,197,94,0.25); border: 2px dashed #22c55e; width: 16px; height: 10px; border-radius: 2px;"></div>
+                    <div class="legend-dot" style="background: rgba(34,197,94,0.12);"></div>
+                    Confidence
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background: rgba(34,197,94,0.3); border: 1px dashed #22c55e; width: 14px; height: 8px; border-radius: 2px;"></div>
                     Green Windows
                 </div>
             </div>
@@ -464,11 +441,31 @@
         </div>
     </div>
 
+    <!-- Carbon Intensity Chart -->
+    <div class="chart-section">
+        <div class="section-header">
+            <h2 class="section-title">Carbon Intensity Forecast (gCO2/kWh)</h2>
+            <div class="chart-legend">
+                <div class="legend-item">
+                    <div class="legend-dot" style="background: #a855f7;"></div>
+                    Forecast
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background: #64748b;"></div>
+                    Actuals
+                </div>
+            </div>
+        </div>
+        <div class="chart-container">
+            <canvas id="carbonChart"></canvas>
+        </div>
+    </div>
+
     <!-- Green Compute Windows -->
     <div class="windows-section">
         <h2 class="section-title">Recommended Green Compute Windows</h2>
         <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">
-            Schedule your AWS batch workloads during these windows to minimize carbon footprint.
+            Schedule AWS batch workloads during these windows to minimize carbon footprint.
         </p>
         <div class="windows-grid" id="windows-grid">
             <div class="loading-state">
@@ -478,7 +475,19 @@
         </div>
     </div>
 
-    <!-- Recent History Table -->
+    <!-- Model Accuracy -->
+    <div class="chart-section">
+        <div class="section-header">
+            <h2 class="section-title">Model Accuracy (Forecast vs Actuals)</h2>
+        </div>
+        <div class="accuracy-grid" id="accuracy-grid">
+            <div class="loading-state" style="padding:20px;">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Table -->
     <div class="history-section">
         <div class="section-header">
             <h2 class="section-title">Recent Grid History (Last 24h)</h2>
@@ -491,14 +500,11 @@
                     <th>Wind (MWh)</th>
                     <th>Solar (MWh)</th>
                     <th>Renewable %</th>
+                    <th>CO2 (g/kWh)</th>
                 </tr>
             </thead>
             <tbody id="history-body">
-                <tr>
-                    <td colspan="5" class="loading-state" style="padding:30px;">
-                        <div class="spinner"></div>
-                    </td>
-                </tr>
+                <tr><td colspan="6" class="loading-state" style="padding:30px;"><div class="spinner"></div></td></tr>
             </tbody>
         </table>
     </div>
@@ -508,23 +514,27 @@
 <footer>
     <div class="container">
         EcoNode &mdash; Carbon-Aware Forecasting for AWS Jupyter Workflows<br>
-        Data from <a href="https://www.eia.gov/opendata/" target="_blank">US EIA</a>.
-        Built for green cloud computing.
+        Data from <a href="https://www.eia.gov/opendata/" target="_blank">US EIA</a>
+        + <a href="https://open-meteo.com/" target="_blank">Open-Meteo</a>.
+        Multi-region weather-enhanced forecasting.
     </div>
 </footer>
 
 <script>
 // =====================================================================
-// Configuration  -- Replace these with your Supabase project values
+// Configuration
 // =====================================================================
 const SUPABASE_URL = 'YOUR_SUPABASE_URL';
 const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
-const REGION = 'US48';
+
+let currentRegion = 'US48';
+let forecastChart = null;
+let carbonChart = null;
 
 // =====================================================================
 // Supabase REST helper
 // =====================================================================
-async function supabaseGet(table, query = '') {
+async function sbGet(table, query = '') {
     const url = `${SUPABASE_URL}/rest/v1/${table}?${query}`;
     const resp = await fetch(url, {
         headers: {
@@ -532,24 +542,25 @@ async function supabaseGet(table, query = '') {
             'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         },
     });
-    if (!resp.ok) throw new Error(`Supabase ${table}: ${resp.status}`);
+    if (!resp.ok) throw new Error(`${table}: ${resp.status}`);
     return resp.json();
 }
 
 // =====================================================================
-// Format helpers
+// Formatters
 // =====================================================================
 function fmtPct(v) { return v != null ? v.toFixed(1) + '%' : '--'; }
 function fmtNum(v) { return v != null ? Math.round(v).toLocaleString() : '--'; }
+function fmtCarbon(v) { return v != null ? Math.round(v) : '--'; }
 
 function fmtTime(iso) {
-    const d = new Date(iso);
-    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'UTC' });
+    return new Date(iso).toLocaleTimeString('en-US', {
+        hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'UTC'
+    });
 }
 
 function fmtDateTime(iso) {
-    const d = new Date(iso);
-    return d.toLocaleDateString('en-US', {
+    return new Date(iso).toLocaleDateString('en-US', {
         weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC'
     });
 }
@@ -561,63 +572,78 @@ function pctColor(v) {
 }
 
 // =====================================================================
+// Region switcher
+// =====================================================================
+document.getElementById('region-select').addEventListener('change', (e) => {
+    currentRegion = e.target.value;
+    loadDashboard();
+});
+
+// =====================================================================
 // Load and render
 // =====================================================================
-let forecastChart = null;
-
 async function loadDashboard() {
     try {
-        const [forecasts, windows, history, runs] = await Promise.all([
-            supabaseGet('forecasts', `region=eq.${REGION}&order=forecast_time.asc&limit=48`),
-            supabaseGet('green_windows', `region=eq.${REGION}&order=rank.asc&limit=3`),
-            supabaseGet('grid_history', `region=eq.${REGION}&order=timestamp_utc.desc&limit=24`),
-            supabaseGet('pipeline_runs', 'order=started_at.desc&limit=1'),
+        const r = currentRegion;
+        const [forecasts, windows, history, runs, metrics] = await Promise.all([
+            sbGet('forecasts', `region=eq.${r}&order=forecast_time.asc&limit=48`),
+            sbGet('green_windows', `region=eq.${r}&order=rank.asc&limit=3`),
+            sbGet('grid_history', `region=eq.${r}&order=timestamp_utc.desc&limit=24`),
+            sbGet('pipeline_runs', 'order=started_at.desc&limit=1'),
+            sbGet('model_metrics', `region=eq.${r}&order=run_date.desc&limit=1`),
         ]);
 
-        renderStats(forecasts, windows, history);
-        renderChart(forecasts, windows);
+        renderStats(forecasts, windows, history, metrics);
+        renderForecastChart(forecasts, windows, history);
+        renderCarbonChart(forecasts, history);
         renderWindows(windows);
+        renderAccuracy(metrics);
         renderHistory(history);
         renderPipelineStatus(runs);
     } catch (err) {
-        console.error('Dashboard load error:', err);
+        console.error('Dashboard error:', err);
         document.getElementById('pipeline-status').textContent = 'Error';
         document.getElementById('chart-loading').innerHTML =
-            `<div class="error-state">Failed to load data. Check console for details.<br><small>${err.message}</small></div>`;
+            `<div class="error-state">Failed to load data.<br><small>${err.message}</small></div>`;
     }
 }
 
-function renderStats(forecasts, windows, history) {
-    // Current renewable %
+function renderStats(forecasts, windows, history, metrics) {
     if (history.length > 0) {
         const latest = history[0];
         document.getElementById('stat-current').textContent = fmtPct(latest.renewable_percentage);
-        document.getElementById('stat-current-sub').textContent =
-            `As of ${fmtTime(latest.timestamp_utc)} UTC`;
+        document.getElementById('stat-current-sub').textContent = `As of ${fmtTime(latest.timestamp_utc)} UTC`;
+
+        const ci = latest.carbon_intensity_gco2kwh;
+        document.getElementById('stat-carbon').textContent = ci != null ? Math.round(ci) : '--';
+        document.getElementById('stat-carbon-sub').textContent = 'gCO2/kWh current';
     }
 
-    // Forecast average
     if (forecasts.length > 0) {
         const avg = forecasts.reduce((s, f) => s + f.renewable_percentage_predicted, 0) / forecasts.length;
         document.getElementById('stat-avg').textContent = fmtPct(avg);
 
-        // Peak
-        const peak = forecasts.reduce((max, f) =>
-            f.renewable_percentage_predicted > max.renewable_percentage_predicted ? f : max, forecasts[0]);
+        const peak = forecasts.reduce((mx, f) =>
+            f.renewable_percentage_predicted > mx.renewable_percentage_predicted ? f : mx, forecasts[0]);
         document.getElementById('stat-peak').textContent = fmtPct(peak.renewable_percentage_predicted);
-        document.getElementById('stat-peak-time').textContent =
-            `At ${fmtTime(peak.forecast_time)} UTC`;
+        document.getElementById('stat-peak-time').textContent = `At ${fmtTime(peak.forecast_time)} UTC`;
     }
 
-    // Best window
     if (windows.length > 0) {
         document.getElementById('stat-best-window').textContent = fmtPct(windows[0].avg_renewable_percentage);
         document.getElementById('stat-best-time').textContent =
-            `${fmtTime(windows[0].window_start)} – ${fmtTime(windows[0].window_end)} UTC`;
+            `${fmtTime(windows[0].window_start)} - ${fmtTime(windows[0].window_end)} UTC`;
+    }
+
+    if (metrics.length > 0) {
+        const m = metrics[0];
+        document.getElementById('stat-mae').textContent = m.mae != null ? m.mae.toFixed(2) : '--';
+        document.getElementById('stat-mae-sub').textContent =
+            `MAE | Coverage: ${m.coverage_80 != null ? m.coverage_80.toFixed(0) + '%' : '--'}`;
     }
 }
 
-function renderChart(forecasts, windows) {
+function renderForecastChart(forecasts, windows, history) {
     if (forecasts.length === 0) {
         document.getElementById('chart-loading').innerHTML =
             '<div class="error-state">No forecast data available yet.</div>';
@@ -628,12 +654,22 @@ function renderChart(forecasts, windows) {
     const canvas = document.getElementById('forecastChart');
     canvas.style.display = 'block';
 
-    const labels = forecasts.map(f => new Date(f.forecast_time));
-    const predicted = forecasts.map(f => f.renewable_percentage_predicted);
-    const lower = forecasts.map(f => f.lower_bound);
-    const upper = forecasts.map(f => f.upper_bound);
+    // Actuals (reversed to chronological)
+    const actualsData = [...history].reverse().map(h => ({
+        x: new Date(h.timestamp_utc),
+        y: h.renewable_percentage,
+    }));
 
-    // Mark green window hours
+    // Forecast
+    const forecastData = forecasts.map(f => ({
+        x: new Date(f.forecast_time),
+        y: f.renewable_percentage_predicted,
+    }));
+
+    const upper = forecasts.map(f => ({ x: new Date(f.forecast_time), y: f.upper_bound }));
+    const lower = forecasts.map(f => ({ x: new Date(f.forecast_time), y: f.lower_bound }));
+
+    // Green window shading
     const windowSet = new Set();
     windows.forEach(w => {
         const start = new Date(w.window_start).getTime();
@@ -644,15 +680,16 @@ function renderChart(forecasts, windows) {
         });
     });
 
-    const bgColors = forecasts.map(f =>
-        windowSet.has(f.forecast_time) ? 'rgba(34,197,94,0.25)' : 'transparent'
-    );
+    const greenData = forecasts.map(f => ({
+        x: new Date(f.forecast_time),
+        y: windowSet.has(f.forecast_time) ? f.renewable_percentage_predicted : null,
+    }));
 
-    const ctx = canvas.getContext('2d');
-    forecastChart = new Chart(ctx, {
+    if (forecastChart) forecastChart.destroy();
+
+    forecastChart = new Chart(canvas.getContext('2d'), {
         type: 'line',
         data: {
-            labels: labels,
             datasets: [
                 {
                     label: 'Upper Bound',
@@ -673,10 +710,9 @@ function renderChart(forecasts, windows) {
                     tension: 0.3,
                 },
                 {
-                    label: 'Predicted Renewable %',
-                    data: predicted,
+                    label: 'Forecast',
+                    data: forecastData,
                     borderColor: '#22c55e',
-                    backgroundColor: 'rgba(34,197,94,0.1)',
                     borderWidth: 2.5,
                     pointRadius: 0,
                     pointHoverRadius: 5,
@@ -685,23 +721,32 @@ function renderChart(forecasts, windows) {
                     fill: false,
                 },
                 {
+                    label: 'Actuals',
+                    data: actualsData,
+                    borderColor: '#3b82f6',
+                    borderWidth: 2,
+                    pointRadius: 1.5,
+                    pointBackgroundColor: '#3b82f6',
+                    tension: 0.3,
+                    fill: false,
+                    borderDash: [],
+                },
+                {
                     label: 'Green Window',
-                    data: predicted,
-                    backgroundColor: bgColors,
+                    data: greenData,
+                    backgroundColor: 'rgba(34,197,94,0.25)',
                     borderColor: 'transparent',
                     fill: 'origin',
                     pointRadius: 0,
                     tension: 0.3,
+                    spanGaps: false,
                 },
             ],
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
+            interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -720,19 +765,18 @@ function renderChart(forecasts, windows) {
                             }) + ' UTC';
                         },
                         label: (item) => {
-                            if (item.datasetIndex === 2) {
-                                return `Renewable: ${item.parsed.y.toFixed(1)}%`;
-                            }
+                            if (item.datasetIndex === 2) return `Forecast: ${item.parsed.y.toFixed(1)}%`;
+                            if (item.datasetIndex === 3) return `Actual: ${item.parsed.y.toFixed(1)}%`;
                             return null;
                         },
                     },
-                    filter: (item) => item.datasetIndex === 2,
+                    filter: (item) => item.datasetIndex === 2 || item.datasetIndex === 3,
                 },
             },
             scales: {
                 x: {
                     type: 'time',
-                    time: { unit: 'hour', displayFormats: { hour: 'MMM d, ha' }, tooltipFormat: 'PPpp' },
+                    time: { unit: 'hour', displayFormats: { hour: 'MMM d, ha' } },
                     grid: { color: 'rgba(255,255,255,0.04)' },
                     ticks: { color: '#64748b', maxTicksLimit: 12, font: { size: 11 } },
                 },
@@ -740,12 +784,97 @@ function renderChart(forecasts, windows) {
                     min: 0,
                     suggestedMax: 50,
                     grid: { color: 'rgba(255,255,255,0.04)' },
-                    ticks: {
-                        color: '#64748b',
-                        callback: v => v + '%',
-                        font: { size: 11 },
-                    },
+                    ticks: { color: '#64748b', callback: v => v + '%', font: { size: 11 } },
                     title: { display: true, text: 'Renewable %', color: '#64748b' },
+                },
+            },
+        },
+    });
+}
+
+function renderCarbonChart(forecasts, history) {
+    const canvas = document.getElementById('carbonChart');
+
+    const actualCarbon = [...history].reverse()
+        .filter(h => h.carbon_intensity_gco2kwh != null)
+        .map(h => ({ x: new Date(h.timestamp_utc), y: h.carbon_intensity_gco2kwh }));
+
+    const forecastCarbon = forecasts
+        .filter(f => f.carbon_intensity_gco2kwh != null)
+        .map(f => ({ x: new Date(f.forecast_time), y: f.carbon_intensity_gco2kwh }));
+
+    if (carbonChart) carbonChart.destroy();
+
+    if (forecastCarbon.length === 0 && actualCarbon.length === 0) {
+        canvas.style.display = 'none';
+        return;
+    }
+
+    carbonChart = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+            datasets: [
+                {
+                    label: 'Carbon Forecast',
+                    data: forecastCarbon,
+                    borderColor: '#a855f7',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.3,
+                    fill: {
+                        target: 'origin',
+                        above: 'rgba(168,85,247,0.08)',
+                    },
+                },
+                {
+                    label: 'Carbon Actual',
+                    data: actualCarbon,
+                    borderColor: '#64748b',
+                    borderWidth: 2,
+                    pointRadius: 1.5,
+                    pointBackgroundColor: '#64748b',
+                    tension: 0.3,
+                    fill: false,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1e293b',
+                    titleColor: '#f1f5f9',
+                    bodyColor: '#94a3b8',
+                    borderColor: '#334155',
+                    borderWidth: 1,
+                    padding: 12,
+                    callbacks: {
+                        title: (items) => {
+                            const d = new Date(items[0].parsed.x);
+                            return d.toLocaleString('en-US', {
+                                weekday: 'short', month: 'short', day: 'numeric',
+                                hour: '2-digit', minute: '2-digit', timeZone: 'UTC'
+                            }) + ' UTC';
+                        },
+                        label: (item) => `${item.dataset.label}: ${Math.round(item.parsed.y)} gCO2/kWh`,
+                    },
+                },
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { unit: 'hour', displayFormats: { hour: 'MMM d, ha' } },
+                    grid: { color: 'rgba(255,255,255,0.04)' },
+                    ticks: { color: '#64748b', maxTicksLimit: 12, font: { size: 11 } },
+                },
+                y: {
+                    min: 0,
+                    grid: { color: 'rgba(255,255,255,0.04)' },
+                    ticks: { color: '#64748b', font: { size: 11 } },
+                    title: { display: true, text: 'gCO2/kWh', color: '#64748b' },
                 },
             },
         },
@@ -765,27 +894,72 @@ function renderWindows(windows) {
             <div class="window-rank">#${w.rank}</div>
             <div class="window-time">${fmtTime(w.window_start)} &ndash; ${fmtTime(w.window_end)} UTC</div>
             <div class="window-date">${fmtDateTime(w.window_start)}</div>
-            <div class="window-pct">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                </svg>
-                ${fmtPct(w.avg_renewable_percentage)} avg renewable
+            <div class="window-badges">
+                <div class="window-badge green">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                    </svg>
+                    ${fmtPct(w.avg_renewable_percentage)} renewable
+                </div>
+                ${w.avg_carbon_intensity != null ? `
+                    <div class="window-badge carbon">
+                        ${Math.round(w.avg_carbon_intensity)} gCO2/kWh
+                    </div>
+                ` : ''}
             </div>
         </div>
     `).join('');
+}
+
+function renderAccuracy(metrics) {
+    const grid = document.getElementById('accuracy-grid');
+
+    if (metrics.length === 0) {
+        grid.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; padding:12px;">No evaluation data yet. Metrics appear after the second pipeline run.</div>';
+        return;
+    }
+
+    const m = metrics[0];
+    grid.innerHTML = `
+        <div class="accuracy-card">
+            <div class="metric-value">${m.mae != null ? m.mae.toFixed(2) : '--'}</div>
+            <div class="metric-label">MAE (%pts)</div>
+        </div>
+        <div class="accuracy-card">
+            <div class="metric-value">${m.rmse != null ? m.rmse.toFixed(2) : '--'}</div>
+            <div class="metric-label">RMSE (%pts)</div>
+        </div>
+        <div class="accuracy-card">
+            <div class="metric-value">${m.mape != null ? m.mape.toFixed(1) + '%' : '--'}</div>
+            <div class="metric-label">MAPE</div>
+        </div>
+        <div class="accuracy-card">
+            <div class="metric-value">${m.coverage_80 != null ? m.coverage_80.toFixed(0) + '%' : '--'}</div>
+            <div class="metric-label">Interval Coverage</div>
+        </div>
+        <div class="accuracy-card">
+            <div class="metric-value">${m.sample_size || '--'}</div>
+            <div class="metric-label">Sample Size</div>
+        </div>
+        <div class="accuracy-card">
+            <div class="metric-value" style="font-size:0.9rem;">${m.run_date || '--'}</div>
+            <div class="metric-label">Last Eval</div>
+        </div>
+    `;
 }
 
 function renderHistory(history) {
     const tbody = document.getElementById('history-body');
 
     if (history.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="error-state">No history data yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="error-state">No history data yet.</td></tr>';
         return;
     }
 
     tbody.innerHTML = history.map(h => {
         const pct = h.renewable_percentage || 0;
         const color = pctColor(pct);
+        const ci = h.carbon_intensity_gco2kwh;
         return `
             <tr>
                 <td>${fmtTime(h.timestamp_utc)}</td>
@@ -800,6 +974,9 @@ function renderHistory(history) {
                         </div>
                     </div>
                 </td>
+                <td style="color:${ci && ci < 300 ? '#22c55e' : ci && ci < 450 ? '#f59e0b' : '#ef4444'}; font-weight:600;">
+                    ${ci != null ? Math.round(ci) : '--'}
+                </td>
             </tr>
         `;
     }).join('');
@@ -809,10 +986,7 @@ function renderPipelineStatus(runs) {
     const el = document.getElementById('pipeline-status');
     const updated = document.getElementById('last-updated');
 
-    if (runs.length === 0) {
-        el.textContent = 'No runs yet';
-        return;
-    }
+    if (runs.length === 0) { el.textContent = 'No runs yet'; return; }
 
     const run = runs[0];
     el.textContent = run.status === 'success' ? 'Pipeline Healthy' : run.status;
@@ -825,7 +999,6 @@ function renderPipelineStatus(runs) {
     }
 }
 
-// Boot
 loadDashboard();
 </script>
 
