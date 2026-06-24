@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS model_metrics (
     mape            DOUBLE PRECISION,
     coverage_80     DOUBLE PRECISION,
     sample_size     INTEGER,
+    skill_score     DOUBLE PRECISION,
     model_version   TEXT NOT NULL DEFAULT 'prophet-v2-weather',
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
 
@@ -90,6 +91,7 @@ CREATE TABLE IF NOT EXISTS pipeline_runs (
     records_ingested INTEGER DEFAULT 0,
     forecast_hours   INTEGER DEFAULT 0,
     green_windows_found INTEGER DEFAULT 0,
+    carbon_savings_pct DOUBLE PRECISION,
     error_message   TEXT,
     started_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     completed_at    TIMESTAMPTZ
