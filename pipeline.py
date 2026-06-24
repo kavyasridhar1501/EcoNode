@@ -47,7 +47,7 @@ REGIONS = {
         "carbon_factor": 550,
         "changepoint_prior_scale": 0.05,
         "seasonality_mode": "multiplicative",
-        "interval_width": 0.80,
+        "interval_width": 0.70,
         "daily_fourier": 10,
         "weekly_fourier": 3,
     },
@@ -71,7 +71,7 @@ REGIONS = {
         "carbon_factor": 500,
         "changepoint_prior_scale": 0.08,
         "seasonality_mode": "multiplicative",
-        "interval_width": 0.80,
+        "interval_width": 0.70,
         "daily_fourier": 10,
         "weekly_fourier": 3,
     },
@@ -498,6 +498,7 @@ def evaluate_model(sb: Client, region: str) -> dict | None:
     try:
         now = datetime.now(timezone.utc)
         yesterday = (now - timedelta(hours=24)).isoformat()
+        two_days_ago = (now - timedelta(hours=48)).isoformat()
         now_iso = now.isoformat()
 
         forecasts_resp = (
@@ -517,7 +518,7 @@ def evaluate_model(sb: Client, region: str) -> dict | None:
             sb.table("grid_history")
             .select("timestamp_utc,renewable_percentage")
             .eq("region", region)
-            .gte("timestamp_utc", yesterday)
+            .gte("timestamp_utc", two_days_ago)
             .lte("timestamp_utc", now_iso)
             .execute()
         )
@@ -560,6 +561,36 @@ def evaluate_model(sb: Client, region: str) -> dict | None:
         in_bounds = (actual >= lower) & (actual <= upper)
         coverage = float(in_bounds.mean() * 100)
 
+        # Persistence baseline: predict each hour = actual from 24h ago
+        ac_full = ac.copy()
+        ac_full["hour_minus_24"] = ac_full["hour"] - pd.Timedelta(hours=24)
+        baseline_merge = merged[["hour"]].merge(
+            ac_full[["hour", "renewable_percentage"]].rename(
+                columns={"hour": "hour_minus_24", "renewable_percentage": "baseline_pred"}
+            ),
+            left_on="hour",
+            right_on="hour_minus_24",
+            how="left",
+        )
+        baseline_merge["actual"] = actual
+
+        has_baseline = baseline_merge["baseline_pred"].notna().sum() >= 3
+        if has_baseline:
+            bm = baseline_merge.dropna(subset=["baseline_pred"])
+            baseline_errors = bm["baseline_pred"].values - bm["actual"].values
+            baseline_mae = float(np.mean(np.abs(baseline_errors)))
+            skill_score = round(1.0 - (mae / baseline_mae), 4) if baseline_mae > 0 else None
+        else:
+            skill_score = None
+
+        log.info(
+            "[%s] Skill score: %s (model MAE=%.2f vs baseline MAE=%.2f)",
+            region,
+            f"{skill_score:.2f}" if skill_score is not None else "N/A",
+            mae,
+            baseline_mae if has_baseline else 0,
+        )
+
         metrics = {
             "region": region,
             "run_date": now.strftime("%Y-%m-%d"),
@@ -568,14 +599,17 @@ def evaluate_model(sb: Client, region: str) -> dict | None:
             "mape": round(mape, 4) if mape is not None else None,
             "coverage_80": round(coverage, 2),
             "sample_size": len(merged),
+            "skill_score": skill_score,
             "model_version": "prophet-v2-weather",
         }
 
         sb.table("model_metrics").upsert(metrics, on_conflict="region,run_date").execute()
 
         log.info(
-            "[%s] Evaluation: MAE=%.2f RMSE=%.2f Coverage=%.1f%% (n=%d)",
-            region, mae, rmse, coverage, len(merged),
+            "[%s] Evaluation: MAE=%.2f RMSE=%.2f Coverage=%.1f%% Skill=%.2f (n=%d)",
+            region, mae, rmse, coverage,
+            skill_score if skill_score is not None else 0,
+            len(merged),
         )
         return metrics
 
@@ -649,6 +683,7 @@ def run_pipeline():
         total_ingested = 0
         total_forecast = 0
         total_windows = 0
+        carbon_savings_all = []
 
         for region, config in REGIONS.items():
             log.info("=" * 60)
@@ -670,11 +705,25 @@ def run_pipeline():
             windows_df = find_green_windows(forecast_df)
             total_windows += upsert_green_windows(sb, windows_df, region)
 
+            if not forecast_df.empty and not windows_df.empty:
+                avg_carbon_all = float(forecast_df["carbon_intensity_gco2kwh"].mean())
+                avg_carbon_green = float(windows_df["avg_carbon_intensity"].mean())
+                if avg_carbon_all > 0:
+                    savings_pct = round((avg_carbon_all - avg_carbon_green) / avg_carbon_all * 100, 1)
+                    carbon_savings_all.append(savings_pct)
+                    log.info(
+                        "[%s] Carbon savings: %.1f%% (green=%.0f vs avg=%.0f gCO2/kWh)",
+                        region, savings_pct, avg_carbon_green, avg_carbon_all,
+                    )
+
+        avg_savings = round(sum(carbon_savings_all) / len(carbon_savings_all), 1) if carbon_savings_all else None
+
         sb.table("pipeline_runs").update({
             "status": "success",
             "records_ingested": total_ingested,
             "forecast_hours": total_forecast,
             "green_windows_found": total_windows,
+            "carbon_savings_pct": avg_savings,
             "completed_at": datetime.now(timezone.utc).isoformat(),
         }).eq("run_id", run_id).execute()
 

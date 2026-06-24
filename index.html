@@ -407,6 +407,16 @@
             <div class="stat-value blue" id="stat-mae">--</div>
             <div class="stat-sub" id="stat-mae-sub">MAE (last eval)</div>
         </div>
+        <div class="stat-card">
+            <div class="stat-label">Forecast Skill</div>
+            <div class="stat-value green" id="stat-skill">--</div>
+            <div class="stat-sub" id="stat-skill-sub">vs persistence baseline</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">CO2 Savings</div>
+            <div class="stat-value green" id="stat-savings">--</div>
+            <div class="stat-sub" id="stat-savings-sub">Green windows vs avg</div>
+        </div>
     </div>
 
     <!-- Forecast Chart -->
@@ -640,6 +650,25 @@ function renderStats(forecasts, windows, history, metrics) {
         document.getElementById('stat-mae').textContent = m.mae != null ? m.mae.toFixed(2) : '--';
         document.getElementById('stat-mae-sub').textContent =
             `MAE | Coverage: ${m.coverage_80 != null ? m.coverage_80.toFixed(0) + '%' : '--'}`;
+
+        if (m.skill_score != null) {
+            const pct = (m.skill_score * 100).toFixed(0);
+            document.getElementById('stat-skill').textContent = pct + '%';
+            document.getElementById('stat-skill-sub').textContent =
+                m.skill_score > 0 ? 'better than persistence' : 'vs persistence baseline';
+        }
+    }
+
+    // Carbon savings from green windows vs full forecast average
+    if (forecasts.length > 0 && windows.length > 0) {
+        const avgCarbonAll = forecasts.reduce((s, f) => s + (f.carbon_intensity_gco2kwh || 0), 0) / forecasts.length;
+        const avgCarbonGreen = windows.reduce((s, w) => s + (w.avg_carbon_intensity || 0), 0) / windows.length;
+        if (avgCarbonAll > 0) {
+            const savings = ((avgCarbonAll - avgCarbonGreen) / avgCarbonAll * 100).toFixed(0);
+            document.getElementById('stat-savings').textContent = savings + '%';
+            document.getElementById('stat-savings-sub').textContent =
+                `${Math.round(avgCarbonGreen)} vs ${Math.round(avgCarbonAll)} gCO2/kWh`;
+        }
     }
 }
 
@@ -920,6 +949,8 @@ function renderAccuracy(metrics) {
     }
 
     const m = metrics[0];
+    const skillPct = m.skill_score != null ? (m.skill_score * 100).toFixed(0) + '%' : '--';
+    const skillColor = m.skill_score != null && m.skill_score > 0 ? 'color: var(--green-accent)' : '';
     grid.innerHTML = `
         <div class="accuracy-card">
             <div class="metric-value">${m.mae != null ? m.mae.toFixed(2) : '--'}</div>
@@ -932,6 +963,10 @@ function renderAccuracy(metrics) {
         <div class="accuracy-card">
             <div class="metric-value">${m.mape != null ? m.mape.toFixed(1) + '%' : '--'}</div>
             <div class="metric-label">MAPE</div>
+        </div>
+        <div class="accuracy-card">
+            <div class="metric-value" style="${skillColor}">${skillPct}</div>
+            <div class="metric-label">Skill Score</div>
         </div>
         <div class="accuracy-card">
             <div class="metric-value">${m.coverage_80 != null ? m.coverage_80.toFixed(0) + '%' : '--'}</div>
