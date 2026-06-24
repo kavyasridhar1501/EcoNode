@@ -476,13 +476,16 @@ def evaluate_model(sb: Client, region: str) -> dict | None:
         fc = pd.DataFrame(forecasts_resp.data)
         ac = pd.DataFrame(actuals_resp.data)
 
-        fc["hour"] = pd.to_datetime(fc["forecast_time"]).dt.floor("h")
-        ac["hour"] = pd.to_datetime(ac["timestamp_utc"]).dt.floor("h")
+        log.info("[%s] Evaluation: %d forecasts, %d actuals fetched", region, len(fc), len(ac))
+
+        fc["hour"] = pd.to_datetime(fc["forecast_time"], utc=True).dt.floor("h")
+        ac["hour"] = pd.to_datetime(ac["timestamp_utc"], utc=True).dt.floor("h")
 
         merged = fc.merge(ac, on="hour", suffixes=("_pred", "_actual"))
+        log.info("[%s] Evaluation: %d matched points after merge", region, len(merged))
 
         if len(merged) < 3:
-            log.info("[%s] Too few matching points (%d)", region, len(merged))
+            log.info("[%s] Too few matching points (%d) — need at least 3", region, len(merged))
             return None
 
         predicted = merged["renewable_percentage_predicted"].values.astype(float)
