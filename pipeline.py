@@ -61,6 +61,8 @@ REGIONS = {
         "interval_width": 0.90,
         "daily_fourier": 15,
         "weekly_fourier": 5,
+        "use_logit": True,
+        "n_changepoints": 40,
     },
     "ERCO": {
         "name": "Texas (ERCOT)",
@@ -357,6 +359,15 @@ def upsert_history(sb: Client, df: pd.DataFrame) -> int:
 # 6. Weather-Enhanced Forecasting
 # ---------------------------------------------------------------------------
 
+def _logit(y: np.ndarray) -> np.ndarray:
+    p = np.clip(y / 100.0, 0.005, 0.995)
+    return np.log(p / (1 - p))
+
+
+def _inv_logit(x: np.ndarray) -> np.ndarray:
+    return 100.0 / (1.0 + np.exp(-x))
+
+
 def train_and_forecast(df: pd.DataFrame, region: str, config: dict) -> pd.DataFrame:
     if len(df) < 48:
         log.warning("[%s] Insufficient data (%d rows, need >= 48)", region, len(df))
@@ -365,6 +376,10 @@ def train_and_forecast(df: pd.DataFrame, region: str, config: dict) -> pd.DataFr
     prophet_df = df[["timestamp_utc", "renewable_percentage"]].copy()
     prophet_df.columns = ["ds", "y"]
     prophet_df["ds"] = prophet_df["ds"].dt.tz_localize(None)
+
+    use_logit = config.get("use_logit", False)
+    if use_logit:
+        prophet_df["y"] = _logit(prophet_df["y"].values)
 
     has_weather = (
         "temperature_c" in df.columns
@@ -377,6 +392,8 @@ def train_and_forecast(df: pd.DataFrame, region: str, config: dict) -> pd.DataFr
         for col in weather_cols:
             prophet_df[col] = df[col].ffill().bfill().values
 
+    prophet_df["hour"] = prophet_df["ds"].dt.hour
+
     model = Prophet(
         daily_seasonality=False,
         weekly_seasonality=False,
@@ -384,6 +401,7 @@ def train_and_forecast(df: pd.DataFrame, region: str, config: dict) -> pd.DataFr
         changepoint_prior_scale=config.get("changepoint_prior_scale", 0.05),
         seasonality_mode=config.get("seasonality_mode", "multiplicative"),
         interval_width=config.get("interval_width", 0.80),
+        n_changepoints=config.get("n_changepoints", 25),
     )
 
     model.add_seasonality(
@@ -392,6 +410,7 @@ def train_and_forecast(df: pd.DataFrame, region: str, config: dict) -> pd.DataFr
     model.add_seasonality(
         name="weekly", period=7, fourier_order=config.get("weekly_fourier", 3)
     )
+    model.add_regressor("hour")
 
     if has_weather:
         for col in weather_cols:
@@ -400,6 +419,7 @@ def train_and_forecast(df: pd.DataFrame, region: str, config: dict) -> pd.DataFr
     model.fit(prophet_df)
 
     future = model.make_future_dataframe(periods=FORECAST_HOURS, freq="h")
+    future["hour"] = future["ds"].dt.hour
 
     if has_weather:
         weather_fc = fetch_weather_forecast(config["lat"], config["lon"])
@@ -424,15 +444,24 @@ def train_and_forecast(df: pd.DataFrame, region: str, config: dict) -> pd.DataFr
     cutoff = prophet_df["ds"].max()
     fut = forecast[forecast["ds"] > cutoff].copy()
 
+    if use_logit:
+        yhat = _inv_logit(fut["yhat"].values)
+        yhat_lower = _inv_logit(fut["yhat_lower"].values)
+        yhat_upper = _inv_logit(fut["yhat_upper"].values)
+    else:
+        yhat = fut["yhat"].clip(0, 100).values
+        yhat_lower = fut["yhat_lower"].clip(0, 100).values
+        yhat_upper = fut["yhat_upper"].clip(0, 100).values
+
     carbon_factor = config["carbon_factor"]
     result = pd.DataFrame({
         "forecast_time": pd.to_datetime(fut["ds"], utc=True),
-        "renewable_percentage_predicted": fut["yhat"].clip(0, 100),
-        "lower_bound": fut["yhat_lower"].clip(0, 100),
-        "upper_bound": fut["yhat_upper"].clip(0, 100),
-        "carbon_intensity_gco2kwh": fut["yhat"].clip(0, 100).apply(
+        "renewable_percentage_predicted": yhat,
+        "lower_bound": yhat_lower,
+        "upper_bound": yhat_upper,
+        "carbon_intensity_gco2kwh": pd.Series(yhat).apply(
             lambda p: compute_carbon_intensity(p, carbon_factor)
-        ),
+        ).values,
     })
 
     log.info("[%s] Generated %d-hour forecast (weather=%s)", region, len(result), has_weather)
