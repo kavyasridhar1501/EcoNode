@@ -562,22 +562,13 @@ def evaluate_model(sb: Client, region: str) -> dict | None:
         coverage = float(in_bounds.mean() * 100)
 
         # Persistence baseline: predict each hour = actual from 24h ago
-        ac_full = ac.copy()
-        ac_full["hour_minus_24"] = ac_full["hour"] - pd.Timedelta(hours=24)
-        baseline_merge = merged[["hour"]].merge(
-            ac_full[["hour", "renewable_percentage"]].rename(
-                columns={"hour": "hour_minus_24", "renewable_percentage": "baseline_pred"}
-            ),
-            left_on="hour",
-            right_on="hour_minus_24",
-            how="left",
-        )
-        baseline_merge["actual"] = actual
+        ac_lookup = ac.set_index("hour")["renewable_percentage"]
+        merged["baseline_pred"] = (merged["hour"] - pd.Timedelta(hours=24)).map(ac_lookup)
 
-        has_baseline = baseline_merge["baseline_pred"].notna().sum() >= 3
+        has_baseline = merged["baseline_pred"].notna().sum() >= 3
         if has_baseline:
-            bm = baseline_merge.dropna(subset=["baseline_pred"])
-            baseline_errors = bm["baseline_pred"].values - bm["actual"].values
+            bm = merged.dropna(subset=["baseline_pred"])
+            baseline_errors = bm["baseline_pred"].values - bm["renewable_percentage"].values.astype(float)
             baseline_mae = float(np.mean(np.abs(baseline_errors)))
             skill_score = round(1.0 - (mae / baseline_mae), 4) if baseline_mae > 0 else None
         else:

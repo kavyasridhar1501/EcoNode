@@ -408,9 +408,9 @@
             <div class="stat-sub" id="stat-mae-sub">MAE (last eval)</div>
         </div>
         <div class="stat-card">
-            <div class="stat-label">Forecast Skill</div>
+            <div class="stat-label">Forecast Improvement</div>
             <div class="stat-value green" id="stat-skill">--</div>
-            <div class="stat-sub" id="stat-skill-sub">vs persistence baseline</div>
+            <div class="stat-sub" id="stat-skill-sub">vs repeat-yesterday</div>
         </div>
         <div class="stat-card">
             <div class="stat-label">CO2 Savings</div>
@@ -655,7 +655,7 @@ function renderStats(forecasts, windows, history, metrics) {
             const pct = (m.skill_score * 100).toFixed(0);
             document.getElementById('stat-skill').textContent = pct + '%';
             document.getElementById('stat-skill-sub').textContent =
-                m.skill_score > 0 ? 'better than persistence' : 'vs persistence baseline';
+                m.skill_score > 0 ? 'better than repeat-yesterday' : 'vs repeat-yesterday';
         }
     }
 
@@ -966,7 +966,7 @@ function renderAccuracy(metrics) {
         </div>
         <div class="accuracy-card">
             <div class="metric-value" style="${skillColor}">${skillPct}</div>
-            <div class="metric-label">Skill Score</div>
+            <div class="metric-label">Forecast Improvement</div>
         </div>
         <div class="accuracy-card">
             <div class="metric-value">${m.coverage_80 != null ? m.coverage_80.toFixed(0) + '%' : '--'}</div>
