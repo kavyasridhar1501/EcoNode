@@ -31,7 +31,7 @@ SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_SERVICE_KEY = os.environ["SUPABASE_SERVICE_KEY"]
 
 EIA_BASE = "https://api.eia.gov/v2"
-LOOKBACK_DAYS = 30
+LOOKBACK_DAYS = 60
 FORECAST_HOURS = 48
 GREEN_WINDOW_HOURS = 4
 GREEN_WINDOW_COUNT = 3
@@ -45,18 +45,33 @@ REGIONS = {
         "lat": 39.10,
         "lon": -94.58,
         "carbon_factor": 550,
+        "changepoint_prior_scale": 0.05,
+        "seasonality_mode": "multiplicative",
+        "interval_width": 0.80,
+        "daily_fourier": 10,
+        "weekly_fourier": 3,
     },
     "CISO": {
         "name": "California (CAISO)",
         "lat": 34.05,
         "lon": -118.24,
         "carbon_factor": 350,
+        "changepoint_prior_scale": 0.15,
+        "seasonality_mode": "additive",
+        "interval_width": 0.90,
+        "daily_fourier": 15,
+        "weekly_fourier": 5,
     },
     "ERCO": {
         "name": "Texas (ERCOT)",
         "lat": 29.76,
         "lon": -95.37,
         "carbon_factor": 500,
+        "changepoint_prior_scale": 0.08,
+        "seasonality_mode": "multiplicative",
+        "interval_width": 0.80,
+        "daily_fourier": 10,
+        "weekly_fourier": 3,
     },
 }
 
@@ -233,7 +248,8 @@ def validate_data(df: pd.DataFrame, region: str) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 def compute_carbon_intensity(renewable_pct: float, carbon_factor: float) -> float:
-    return round(carbon_factor * (1.0 - renewable_pct / 100.0), 2)
+    pct = max(0.0, min(100.0, renewable_pct))
+    return round(carbon_factor * (1.0 - pct / 100.0), 2)
 
 
 # ---------------------------------------------------------------------------
@@ -362,11 +378,19 @@ def train_and_forecast(df: pd.DataFrame, region: str, config: dict) -> pd.DataFr
             prophet_df[col] = df[col].ffill().bfill().values
 
     model = Prophet(
-        daily_seasonality=True,
-        weekly_seasonality=True,
+        daily_seasonality=False,
+        weekly_seasonality=False,
         yearly_seasonality=False,
-        changepoint_prior_scale=0.05,
-        seasonality_mode="multiplicative",
+        changepoint_prior_scale=config.get("changepoint_prior_scale", 0.05),
+        seasonality_mode=config.get("seasonality_mode", "multiplicative"),
+        interval_width=config.get("interval_width", 0.80),
+    )
+
+    model.add_seasonality(
+        name="daily", period=1, fourier_order=config.get("daily_fourier", 10)
+    )
+    model.add_seasonality(
+        name="weekly", period=7, fourier_order=config.get("weekly_fourier", 3)
     )
 
     if has_weather:
