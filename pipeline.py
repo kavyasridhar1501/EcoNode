@@ -608,6 +608,141 @@ def evaluate_model(sb: Client, region: str) -> dict | None:
 
 
 # ---------------------------------------------------------------------------
+# 7b. Holdout Backtest (instant metrics, no 1-day lag)
+# ---------------------------------------------------------------------------
+
+def backtest_model(history_df: pd.DataFrame, region: str, config: dict, sb: Client) -> dict | None:
+    """Hold out last 48h of historical data, train on the rest, evaluate immediately."""
+    try:
+        df = history_df.sort_values("timestamp_utc").reset_index(drop=True)
+        test_hours = 48
+
+        if len(df) < test_hours + 72:
+            log.warning("[%s] Not enough data for backtest (%d rows)", region, len(df))
+            return None
+
+        train = df.iloc[:-test_hours].copy()
+        test = df.iloc[-test_hours:].copy()
+
+        prophet_df = train[["timestamp_utc", "renewable_percentage"]].copy()
+        prophet_df.columns = ["ds", "y"]
+        prophet_df["ds"] = prophet_df["ds"].dt.tz_localize(None)
+
+        has_weather = (
+            "temperature_c" in train.columns
+            and train["temperature_c"].notna().sum() > len(train) * 0.5
+        )
+        weather_cols = ["temperature_c", "cloud_cover_pct", "wind_speed_ms"]
+
+        if has_weather:
+            for col in weather_cols:
+                prophet_df[col] = train[col].ffill().bfill().values
+
+        prophet_df["hour"] = prophet_df["ds"].dt.hour
+
+        model = Prophet(
+            daily_seasonality=False,
+            weekly_seasonality=False,
+            yearly_seasonality=False,
+            changepoint_prior_scale=config.get("changepoint_prior_scale", 0.05),
+            seasonality_mode=config.get("seasonality_mode", "multiplicative"),
+            interval_width=config.get("interval_width", 0.80),
+            n_changepoints=config.get("n_changepoints", 25),
+        )
+        model.add_seasonality(
+            name="daily", period=1, fourier_order=config.get("daily_fourier", 10)
+        )
+        model.add_seasonality(
+            name="weekly", period=7, fourier_order=config.get("weekly_fourier", 3)
+        )
+        model.add_regressor("hour")
+        if has_weather:
+            for col in weather_cols:
+                model.add_regressor(col)
+
+        model.fit(prophet_df)
+
+        future = model.make_future_dataframe(periods=test_hours, freq="h")
+        future["hour"] = future["ds"].dt.hour
+
+        if has_weather:
+            test_w = test[["timestamp_utc"] + weather_cols].copy()
+            test_w["ds"] = test_w["timestamp_utc"].dt.tz_localize(None)
+            future = future.merge(test_w[["ds"] + weather_cols], on="ds", how="left")
+            train_map = prophet_df.set_index("ds")[weather_cols]
+            for col in weather_cols:
+                mask = future[col].isna()
+                future.loc[mask, col] = future.loc[mask, "ds"].map(train_map[col])
+            for col in weather_cols:
+                future[col] = future[col].ffill().bfill()
+
+        forecast = model.predict(future)
+
+        cutoff = prophet_df["ds"].max()
+        fut = forecast[forecast["ds"] > cutoff].head(test_hours)
+
+        predicted = fut["yhat"].clip(0, 100).values
+        lower = fut["yhat_lower"].clip(0, 100).values
+        upper = fut["yhat_upper"].clip(0, 100).values
+        actual = test["renewable_percentage"].values
+
+        n = min(len(predicted), len(actual))
+        if n < 3:
+            log.warning("[%s] Backtest: too few points (%d)", region, n)
+            return None
+
+        predicted, lower, upper, actual = predicted[:n], lower[:n], upper[:n], actual[:n]
+
+        errors = predicted - actual
+        mae = float(np.mean(np.abs(errors)))
+        rmse = float(np.sqrt(np.mean(errors**2)))
+        nonzero = actual != 0
+        mape = (
+            float(np.mean(np.abs(errors[nonzero] / actual[nonzero])) * 100)
+            if nonzero.sum() > 0
+            else None
+        )
+        in_bounds = (actual >= lower) & (actual <= upper)
+        coverage = float(in_bounds.mean() * 100)
+
+        baseline_start = len(df) - test_hours - 24
+        baseline_end = baseline_start + n
+        if baseline_start >= 0 and baseline_end <= len(df):
+            baseline_pred = df.iloc[baseline_start:baseline_end]["renewable_percentage"].values
+            baseline_errors = baseline_pred - actual
+            baseline_mae = float(np.mean(np.abs(baseline_errors)))
+            skill_score = round(1.0 - (mae / baseline_mae), 4) if baseline_mae > 0 else None
+        else:
+            skill_score = None
+            baseline_mae = 0
+
+        now = datetime.now(timezone.utc)
+        metrics = {
+            "region": region,
+            "run_date": now.strftime("%Y-%m-%d"),
+            "mae": round(mae, 4),
+            "rmse": round(rmse, 4),
+            "mape": round(mape, 4) if mape is not None else None,
+            "coverage_80": round(coverage, 2),
+            "sample_size": n,
+            "skill_score": skill_score,
+            "model_version": "prophet-v2-weather",
+        }
+
+        sb.table("model_metrics").upsert(metrics, on_conflict="region,run_date").execute()
+
+        log.info(
+            "[%s] Backtest: MAE=%.2f RMSE=%.2f Coverage=%.1f%% Skill=%.4f (n=%d)",
+            region, mae, rmse, coverage, skill_score or 0, n,
+        )
+        return metrics
+
+    except Exception as e:
+        log.warning("[%s] Backtest failed: %s", region, e)
+        return None
+
+
+# ---------------------------------------------------------------------------
 # 8. Green Window Detection
 # ---------------------------------------------------------------------------
 
@@ -679,18 +814,18 @@ def run_pipeline():
             log.info("Region: %s (%s)", region, config["name"])
             log.info("=" * 60)
 
-            log.info("[%s] Step 0: Evaluate previous forecasts", region)
-            evaluate_model(sb, region)
-
             log.info("[%s] Step 1: Ingest EIA + weather data", region)
             history_df = ingest_grid_data(region, config)
             total_ingested += upsert_history(sb, history_df)
 
-            log.info("[%s] Step 2: Weather-enhanced forecasting", region)
+            log.info("[%s] Step 2: Backtest evaluation (holdout last 48h)", region)
+            backtest_model(history_df, region, config, sb)
+
+            log.info("[%s] Step 3: Weather-enhanced forecasting", region)
             forecast_df = train_and_forecast(history_df, region, config)
             total_forecast += upsert_forecasts(sb, forecast_df, region)
 
-            log.info("[%s] Step 3: Green window detection", region)
+            log.info("[%s] Step 4: Green window detection", region)
             windows_df = find_green_windows(forecast_df)
             total_windows += upsert_green_windows(sb, windows_df, region)
 
