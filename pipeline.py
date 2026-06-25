@@ -51,15 +51,15 @@ REGIONS = {
         "daily_fourier": 10,
         "weekly_fourier": 3,
     },
-    "CISO": {
-        "name": "California (CAISO)",
-        "lat": 34.05,
-        "lon": -118.24,
-        "carbon_factor": 350,
+    "PJM": {
+        "name": "Mid-Atlantic (PJM)",
+        "lat": 39.95,
+        "lon": -75.16,
+        "carbon_factor": 500,
         "changepoint_prior_scale": 0.05,
-        "seasonality_mode": "additive",
-        "interval_width": 0.80,
-        "daily_fourier": 15,
+        "seasonality_mode": "multiplicative",
+        "interval_width": 0.70,
+        "daily_fourier": 10,
         "weekly_fourier": 3,
     },
     "ERCO": {

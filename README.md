@@ -60,7 +60,7 @@ The pipeline transforms raw grid generation data into a rich feature set for for
 
 - **Target variable:** `renewable_percentage = (wind_mwh + solar_mwh) / total_generation_mwh * 100`
 - **Exogenous regressors:** Hourly temperature (C), cloud cover (%), and wind speed (m/s) from Open-Meteo, aligned to each region's representative geographic coordinate
-- **Derived feature:** `carbon_intensity = emission_factor * (1 - renewable_pct / 100)` using EPA-informed region-specific emission factors (CISO: 350, ERCO: 500, US48: 550 gCO2/kWh)
+- **Derived feature:** `carbon_intensity = emission_factor * (1 - renewable_pct / 100)` using EPA-informed region-specific emission factors (PJM: 500, ERCO: 500, US48: 550 gCO2/kWh)
 - **Temporal features:** Daily and weekly seasonality components captured by Prophet's Fourier decomposition
 
 ### Time-Series Forecasting
@@ -127,7 +127,7 @@ The pipeline processes three US Independent System Operator (ISO) regions, each 
 | Region | ISO | Characteristics | Emission Factor |
 |---|---|---|---|
 | **US48** | National | Balanced mix of gas, coal, nuclear, wind, solar | 550 gCO2/kWh |
-| **CISO** | California ISO | Heavy solar, natural gas peakers, minimal coal | 350 gCO2/kWh |
+| **PJM** | PJM Interconnection | Nuclear baseload, natural gas, moderate wind | 500 gCO2/kWh |
 | **ERCO** | ERCOT (Texas) | Strong wind penetration, natural gas dominant | 500 gCO2/kWh |
 
 Each region is modeled independently with its own weather regressors sourced from a representative geographic coordinate.
@@ -211,7 +211,7 @@ Go to your GitHub repo → **Settings → Secrets and variables → Actions** an
 
 The interactive dashboard provides:
 
-- **Region selector** — switch between US48, CISO, and ERCOT
+- **Region selector** — switch between US48, PJM, and ERCOT
 - **Real-time stats** — current renewable %, forecast average, carbon intensity, peak %, model accuracy
 - **48-hour forecast chart** — predicted renewable % with confidence bands, actuals overlay, and green window highlighting
 - **Carbon intensity chart** — separate gCO2/kWh time series with forecast and actuals
