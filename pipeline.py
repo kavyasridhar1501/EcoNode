@@ -31,7 +31,7 @@ SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_SERVICE_KEY = os.environ["SUPABASE_SERVICE_KEY"]
 
 EIA_BASE = "https://api.eia.gov/v2"
-LOOKBACK_DAYS = 60
+LOOKBACK_DAYS = 90
 FORECAST_HOURS = 48
 GREEN_WINDOW_HOURS = 4
 GREEN_WINDOW_COUNT = 3
@@ -615,7 +615,7 @@ def backtest_model(history_df: pd.DataFrame, region: str, config: dict, sb: Clie
     """Hold out last 48h of historical data, train on the rest, evaluate immediately."""
     try:
         df = history_df.sort_values("timestamp_utc").reset_index(drop=True)
-        test_hours = 48
+        test_hours = 168
 
         if len(df) < test_hours + 72:
             log.warning("[%s] Not enough data for backtest (%d rows)", region, len(df))
