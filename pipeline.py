@@ -58,7 +58,7 @@ REGIONS = {
         "carbon_factor": 500,
         "changepoint_prior_scale": 0.05,
         "seasonality_mode": "multiplicative",
-        "interval_width": 0.70,
+        "interval_width": 0.80,
         "daily_fourier": 10,
         "weekly_fourier": 3,
     },
