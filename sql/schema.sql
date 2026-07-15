@@ -1,7 +1,5 @@
--- ============================================================
 -- EcoNode v2: Carbon-Aware Forecasting for AWS Jupyter Workflows
 -- Full Supabase PostgreSQL Schema (multi-region, weather, metrics)
--- ============================================================
 
 -- Historical grid generation data from EIA (with weather + carbon)
 CREATE TABLE IF NOT EXISTS grid_history (
@@ -97,9 +95,7 @@ CREATE TABLE IF NOT EXISTS pipeline_runs (
     completed_at    TIMESTAMPTZ
 );
 
--- ============================================================
 -- Row Level Security (RLS) Policies
--- ============================================================
 
 ALTER TABLE grid_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE forecasts ENABLE ROW LEVEL SECURITY;
