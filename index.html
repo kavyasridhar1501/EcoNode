@@ -531,9 +531,7 @@
 </footer>
 
 <script>
-// =====================================================================
 // Configuration
-// =====================================================================
 const SUPABASE_URL = 'https://iaxqflytpfvmwofxatmn.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlheHFmbHl0cGZ2bXdvZnhhdG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMDkzOTAsImV4cCI6MjA5Nzc4NTM5MH0.7eWa1Z3j54U6cCU4qI2CUQOmsUVmQ27DIhGV4iyZtoU';
 
@@ -541,9 +539,7 @@ let currentRegion = 'US48';
 let forecastChart = null;
 let carbonChart = null;
 
-// =====================================================================
 // Supabase REST helper
-// =====================================================================
 async function sbGet(table, query = '') {
     const url = `${SUPABASE_URL}/rest/v1/${table}?${query}`;
     const resp = await fetch(url, {
@@ -556,9 +552,7 @@ async function sbGet(table, query = '') {
     return resp.json();
 }
 
-// =====================================================================
 // Formatters
-// =====================================================================
 function fmtPct(v) { return v != null ? v.toFixed(1) + '%' : '--'; }
 function fmtNum(v) { return v != null ? Math.round(v).toLocaleString() : '--'; }
 function fmtCarbon(v) { return v != null ? Math.round(v) : '--'; }
@@ -581,17 +575,13 @@ function pctColor(v) {
     return '#ef4444';
 }
 
-// =====================================================================
 // Region switcher
-// =====================================================================
 document.getElementById('region-select').addEventListener('change', (e) => {
     currentRegion = e.target.value;
     loadDashboard();
 });
 
-// =====================================================================
 // Load and render
-// =====================================================================
 async function loadDashboard() {
     try {
         const r = currentRegion;

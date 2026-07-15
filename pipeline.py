@@ -23,9 +23,7 @@ logging.basicConfig(
 )
 log = logging.getLogger("econode")
 
-# ---------------------------------------------------------------------------
 # Configuration
-# ---------------------------------------------------------------------------
 EIA_API_KEY = os.environ["EIA_API_KEY"]
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_SERVICE_KEY = os.environ["SUPABASE_SERVICE_KEY"]
@@ -83,9 +81,7 @@ def supabase_client() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 
-# ---------------------------------------------------------------------------
 # 1. EIA Data Ingestion
-# ---------------------------------------------------------------------------
 
 def fetch_eia_series(fuel_type: str | None, start: str, end: str, region: str) -> pd.DataFrame:
     url = f"{EIA_BASE}/electricity/rto/fuel-type-data/data/"
@@ -132,9 +128,7 @@ def fetch_eia_series(fuel_type: str | None, start: str, end: str, region: str) -
     return df
 
 
-# ---------------------------------------------------------------------------
 # 2. Weather Data (Open-Meteo, free, no API key)
-# ---------------------------------------------------------------------------
 
 def fetch_weather_historical(lat: float, lon: float, start_date: str, end_date: str) -> pd.DataFrame:
     params = {
@@ -187,9 +181,7 @@ def fetch_weather_forecast(lat: float, lon: float) -> pd.DataFrame:
         return pd.DataFrame()
 
 
-# ---------------------------------------------------------------------------
 # 3. Data Quality Checks
-# ---------------------------------------------------------------------------
 
 def validate_data(df: pd.DataFrame, region: str) -> pd.DataFrame:
     if df.empty:
@@ -243,18 +235,14 @@ def validate_data(df: pd.DataFrame, region: str) -> pd.DataFrame:
     return df.reset_index(drop=True)
 
 
-# ---------------------------------------------------------------------------
 # 4. Carbon Intensity
-# ---------------------------------------------------------------------------
 
 def compute_carbon_intensity(renewable_pct: float, carbon_factor: float) -> float:
     pct = max(0.0, min(100.0, renewable_pct))
     return round(carbon_factor * (1.0 - pct / 100.0), 2)
 
 
-# ---------------------------------------------------------------------------
 # 5. Full Ingestion (EIA + Weather + Quality)
-# ---------------------------------------------------------------------------
 
 def ingest_grid_data(region: str, config: dict) -> pd.DataFrame:
     end_dt = datetime.now(timezone.utc)
@@ -353,9 +341,7 @@ def upsert_history(sb: Client, df: pd.DataFrame) -> int:
     return len(records)
 
 
-# ---------------------------------------------------------------------------
 # 6. Weather-Enhanced Forecasting
-# ---------------------------------------------------------------------------
 
 def _logit(y: np.ndarray) -> np.ndarray:
     p = np.clip(y / 100.0, 0.005, 0.995)
@@ -488,9 +474,7 @@ def upsert_forecasts(sb: Client, df: pd.DataFrame, region: str) -> int:
     return len(records)
 
 
-# ---------------------------------------------------------------------------
 # 7. Model Evaluation (Forecast vs Actuals)
-# ---------------------------------------------------------------------------
 
 def evaluate_model(sb: Client, region: str) -> dict | None:
     try:
@@ -607,12 +591,10 @@ def evaluate_model(sb: Client, region: str) -> dict | None:
         return None
 
 
-# ---------------------------------------------------------------------------
 # 7b. Holdout Backtest (instant metrics, no 1-day lag)
-# ---------------------------------------------------------------------------
 
 def backtest_model(history_df: pd.DataFrame, region: str, config: dict, sb: Client) -> dict | None:
-    """Hold out last 48h of historical data, train on the rest, evaluate immediately."""
+    """Hold out last 168h (1 week) of historical data, train on the rest, evaluate immediately."""
     try:
         df = history_df.sort_values("timestamp_utc").reset_index(drop=True)
         test_hours = 168
@@ -742,9 +724,7 @@ def backtest_model(history_df: pd.DataFrame, region: str, config: dict, sb: Clie
         return None
 
 
-# ---------------------------------------------------------------------------
 # 8. Green Window Detection
-# ---------------------------------------------------------------------------
 
 def find_green_windows(forecast_df: pd.DataFrame) -> pd.DataFrame:
     if len(forecast_df) < GREEN_WINDOW_HOURS:
@@ -793,9 +773,7 @@ def upsert_green_windows(sb: Client, df: pd.DataFrame, region: str) -> int:
     return len(records)
 
 
-# ---------------------------------------------------------------------------
 # 9. Pipeline Orchestrator
-# ---------------------------------------------------------------------------
 
 def run_pipeline():
     run_id = str(uuid.uuid4())[:8]

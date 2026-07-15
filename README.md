@@ -28,7 +28,7 @@ GitHub Pages (index.html) ──▶ Multi-region Chart.js dashboard
 
 ### Feature Engineering
 
-The pipeline transforms raw grid generation data into a rich feature set for forecasting:
+The pipeline transforms raw grid generation data into a feature set for forecasting:
 
 - **Target variable:** `renewable_percentage = (wind_mwh + solar_mwh) / total_generation_mwh * 100`
 - **Exogenous regressors:** Hourly temperature (C), cloud cover (%), and wind speed (m/s) from Open-Meteo, aligned to each region's representative geographic coordinate
