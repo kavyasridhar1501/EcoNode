@@ -95,3 +95,25 @@ class TestFindGreenWindows:
         windows = pipeline.find_green_windows(df)
         pcts = windows["avg_renewable_percentage"].tolist()
         assert pcts == sorted(pcts, reverse=True)
+
+
+class TestRegionsConfig:
+    REQUIRED_KEYS = {
+        "name", "lat", "lon", "carbon_factor", "changepoint_prior_scale",
+        "seasonality_mode", "interval_width", "daily_fourier", "weekly_fourier",
+    }
+
+    def test_every_region_has_required_keys(self):
+        for code, config in pipeline.REGIONS.items():
+            missing = self.REQUIRED_KEYS - config.keys()
+            assert not missing, f"{code} missing {missing}"
+
+    def test_region_codes_are_unique_and_uppercase(self):
+        codes = list(pipeline.REGIONS.keys())
+        assert len(codes) == len(set(codes))
+        assert all(c == c.upper() for c in codes)
+
+    def test_coordinates_are_within_continental_us(self):
+        for code, config in pipeline.REGIONS.items():
+            assert 24 <= config["lat"] <= 50, code
+            assert -125 <= config["lon"] <= -66, code

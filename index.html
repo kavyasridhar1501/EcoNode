@@ -8,39 +8,41 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <style>
         :root {
-            --bg-primary: #0a0f1c;
-            --bg-card: #111827;
-            --bg-card-hover: #1a2332;
-            --border: #1e293b;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --green-accent: #22c55e;
-            --green-glow: rgba(34, 197, 94, 0.15);
-            --blue-accent: #3b82f6;
-            --amber-accent: #f59e0b;
-            --red-accent: #ef4444;
-            --purple-accent: #a855f7;
-            --gradient-green: linear-gradient(135deg, #22c55e, #16a34a);
+            color-scheme: light;
+            --page-bg: #eef1f5;
+            --surface: #ffffff;
+            --surface-sunken: #f5f6f8;
+            --text-primary: #0b0b0b;
+            --text-secondary: #52514e;
+            --text-muted: #898781;
+            --grid: #e1e0d9;
+            --border: rgba(11,11,11,0.10);
+            --series-green: #008300;
+            --series-green-wash: rgba(0,131,0,0.08);
+            --series-green-wash-strong: rgba(0,131,0,0.20);
+            --series-blue: #2a78d6;
+            --series-blue-wash: rgba(42,120,214,0.10);
+            --status-good: #0ca30c;
+            --status-warning: #b8860b;
+            --status-critical: #d03b3b;
+            --success-text: #006300;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--bg-primary);
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+            background: var(--page-bg);
             color: var(--text-primary);
             min-height: 100vh;
-            line-height: 1.6;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }
 
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+        .container { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
 
-        header {
-            border-bottom: 1px solid var(--border);
-            padding: 20px 0;
-            background: linear-gradient(180deg, rgba(34,197,94,0.03) 0%, transparent 100%);
-        }
+        /* Header */
+        header { padding: 28px 0 20px; }
 
         .header-inner {
             display: flex;
@@ -50,151 +52,179 @@
             gap: 12px;
         }
 
-        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo { display: flex; align-items: center; gap: 10px; }
 
         .logo-icon {
-            width: 40px; height: 40px;
-            background: var(--gradient-green);
-            border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px;
-            box-shadow: 0 0 20px rgba(34,197,94,0.3);
-        }
-
-        .logo h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
-        .logo h1 span { color: var(--green-accent); }
-
-        .header-controls {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-
-        .region-select {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-            padding: 6px 12px;
+            width: 30px; height: 30px;
+            background: var(--series-green);
             border-radius: 8px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            outline: none;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px;
+            color: #fff;
         }
 
-        .region-select:focus { border-color: var(--green-accent); }
+        .logo h1 { font-size: 1.3rem; font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); }
+        .logo h1 span { color: var(--text-muted); font-weight: 400; }
+
+        .header-meta-group { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 
         .status-badge {
             display: flex; align-items: center; gap: 6px;
-            padding: 4px 12px;
-            background: rgba(34,197,94,0.1);
-            border: 1px solid rgba(34,197,94,0.2);
+            padding: 5px 12px;
+            background: #eaf6ea;
+            border: 1px solid rgba(12,163,12,0.18);
             border-radius: 20px;
-            font-size: 0.78rem;
-            color: var(--green-accent);
+            font-size: 0.8rem;
+            color: var(--status-good);
+            font-weight: 500;
         }
 
         .status-dot {
             width: 6px; height: 6px;
-            background: var(--green-accent);
+            background: var(--status-good);
             border-radius: 50%;
             animation: pulse 2s infinite;
         }
 
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
-        .header-meta { font-size: 0.78rem; color: var(--text-muted); }
+        .header-meta { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* Filter bar */
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-pill {
+            position: relative;
+            display: block;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 7px 34px 7px 14px;
+            min-width: 220px;
+            box-shadow: 0 1px 2px rgba(11,11,11,0.03);
+        }
+
+        .filter-pill-label {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 1px;
+        }
+
+        .filter-select {
+            appearance: none;
+            -webkit-appearance: none;
+            border: none;
+            background: transparent;
+            outline: none;
+            width: 100%;
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        .filter-pill::after {
+            content: '';
+            position: absolute;
+            right: 14px; top: 50%;
+            width: 8px; height: 8px;
+            border-right: 1.5px solid var(--text-muted);
+            border-bottom: 1.5px solid var(--text-muted);
+            transform: translateY(-65%) rotate(45deg);
+            pointer-events: none;
+        }
+
+        .filter-pill:focus-within { border-color: var(--series-blue); }
 
         /* Stats */
         .stats-bar {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 16px;
-            padding: 24px 0;
+            gap: 14px;
+            padding-bottom: 20px;
         }
 
         .stat-card {
-            background: var(--bg-card);
+            background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 14px;
             padding: 18px;
-            transition: background 0.2s;
+            box-shadow: 0 1px 2px rgba(11,11,11,0.03);
         }
-
-        .stat-card:hover { background: var(--bg-card-hover); }
 
         .stat-label {
-            font-size: 0.72rem;
+            font-size: 0.76rem;
             color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
 
-        .stat-value { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; }
-        .stat-value.green { color: var(--green-accent); }
-        .stat-value.blue { color: var(--blue-accent); }
-        .stat-value.amber { color: var(--amber-accent); }
-        .stat-value.purple { color: var(--purple-accent); }
-        .stat-value.red { color: var(--red-accent); }
+        .stat-value { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); }
 
-        .stat-sub { font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px; }
+        .stat-sub { font-size: 0.76rem; color: var(--text-secondary); margin-top: 3px; }
+        .stat-sub.delta-good { color: var(--success-text); font-weight: 600; }
+        .stat-sub.delta-bad { color: var(--status-critical); font-weight: 600; }
 
         /* Sections */
         .chart-section {
-            background: var(--bg-card);
+            background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
+            border-radius: 14px;
+            padding: 22px 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 2px rgba(11,11,11,0.03);
         }
 
         .section-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             flex-wrap: wrap;
             gap: 8px;
         }
 
-        .section-title { font-size: 1.1rem; font-weight: 600; }
+        .section-title { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
+        .section-subtitle { font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px; }
 
         .chart-legend {
-            display: flex; gap: 14px;
+            display: flex; gap: 16px;
             font-size: 0.78rem;
             color: var(--text-secondary);
             flex-wrap: wrap;
         }
 
-        .legend-item { display: flex; align-items: center; gap: 5px; }
-        .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .legend-dot { width: 9px; height: 9px; border-radius: 2px; }
 
-        .chart-container { position: relative; height: 350px; }
+        .chart-container { position: relative; height: 340px; }
 
         /* Green Windows */
-        .windows-section { margin-bottom: 24px; }
+        .windows-section { margin-bottom: 20px; }
+        .windows-section h2.section-title { margin-bottom: 2px; }
 
         .windows-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 16px;
-            margin-top: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 14px;
+            margin-top: 14px;
         }
 
         .window-card {
-            background: var(--bg-card);
+            background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
+            border-radius: 14px;
+            padding: 18px 20px;
             position: relative;
             overflow: hidden;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .window-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(34,197,94,0.1);
+            box-shadow: 0 1px 2px rgba(11,11,11,0.03);
         }
 
         .window-card::before {
@@ -202,22 +232,21 @@
             position: absolute;
             top: 0; left: 0; right: 0;
             height: 3px;
-            background: var(--gradient-green);
+            background: var(--series-green);
         }
 
         .window-rank {
             position: absolute; top: 14px; right: 16px;
-            width: 28px; height: 28px;
-            background: var(--green-glow);
-            border: 1px solid rgba(34,197,94,0.3);
+            width: 26px; height: 26px;
+            background: var(--series-green-wash-strong);
             border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 0.8rem; font-weight: 700;
-            color: var(--green-accent);
+            font-size: 0.76rem; font-weight: 700;
+            color: var(--status-good);
         }
 
-        .window-time { font-size: 1.05rem; font-weight: 600; margin-bottom: 4px; padding-right: 40px; }
-        .window-date { font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 10px; }
+        .window-time { font-size: 1rem; font-weight: 600; margin-bottom: 3px; padding-right: 36px; }
+        .window-date { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px; }
 
         .window-badges { display: flex; gap: 8px; flex-wrap: wrap; }
 
@@ -225,29 +254,22 @@
             display: inline-flex; align-items: center; gap: 5px;
             padding: 5px 12px;
             border-radius: 8px;
-            font-size: 0.82rem; font-weight: 600;
+            font-size: 0.8rem; font-weight: 600;
         }
 
-        .window-badge.green {
-            background: var(--green-glow);
-            color: var(--green-accent);
-        }
+        .window-badge.green { background: var(--series-green-wash-strong); color: var(--status-good); }
+        .window-badge.carbon { background: var(--surface-sunken); color: var(--text-secondary); }
 
-        .window-badge.carbon {
-            background: rgba(168,85,247,0.1);
-            color: var(--purple-accent);
-        }
-
-        /* Model Accuracy */
+        /* Metric grid (accuracy + insights) */
         .accuracy-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 12px;
-            margin-top: 16px;
+            gap: 10px;
+            margin-top: 6px;
         }
 
         .accuracy-card {
-            background: var(--bg-primary);
+            background: var(--surface-sunken);
             border: 1px solid var(--border);
             border-radius: 10px;
             padding: 14px;
@@ -255,30 +277,35 @@
         }
 
         .accuracy-card .metric-value {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--blue-accent);
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
         .accuracy-card .metric-label {
-            font-size: 0.7rem;
+            font-size: 0.72rem;
             color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            margin-top: 2px;
+            margin-top: 3px;
+        }
+
+        .baseline-note {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            margin-top: 14px;
         }
 
         /* History Table */
         .history-section {
-            background: var(--bg-card);
+            background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
+            border-radius: 14px;
+            padding: 22px 24px;
             margin-bottom: 40px;
             overflow-x: auto;
+            box-shadow: 0 1px 2px rgba(11,11,11,0.03);
         }
 
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
 
         th {
             text-align: left;
@@ -286,25 +313,26 @@
             color: var(--text-muted);
             font-weight: 500;
             text-transform: uppercase;
-            font-size: 0.7rem;
-            letter-spacing: 0.05em;
-            border-bottom: 1px solid var(--border);
+            font-size: 0.68rem;
+            letter-spacing: 0.04em;
+            border-bottom: 1px solid var(--grid);
         }
 
         td {
             padding: 10px 12px;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--grid);
             color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
         }
 
         tr:last-child td { border-bottom: none; }
-        tr:hover td { background: rgba(255,255,255,0.02); }
+        tr:hover td { background: var(--surface-sunken); }
 
         .pct-bar-cell { display: flex; align-items: center; gap: 8px; }
 
         .pct-bar {
             flex: 1; height: 5px;
-            background: rgba(255,255,255,0.05);
+            background: var(--grid);
             border-radius: 3px;
             overflow: hidden;
             max-width: 100px;
@@ -313,15 +341,14 @@
         .pct-bar-fill { height: 100%; border-radius: 3px; }
 
         footer {
-            border-top: 1px solid var(--border);
-            padding: 20px 0;
+            padding: 20px 0 40px;
             text-align: center;
-            font-size: 0.78rem;
+            font-size: 0.8rem;
             color: var(--text-muted);
-            margin-top: 20px;
         }
 
-        footer a { color: var(--green-accent); text-decoration: none; }
+        footer a { color: var(--series-blue); text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
 
         .loading-state {
             display: flex; flex-direction: column;
@@ -331,16 +358,16 @@
         }
 
         .spinner {
-            width: 32px; height: 32px;
-            border: 3px solid var(--border);
-            border-top-color: var(--green-accent);
+            width: 28px; height: 28px;
+            border: 3px solid var(--grid);
+            border-top-color: var(--series-green);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
 
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        .error-state { padding: 40px; text-align: center; color: var(--red-accent); }
+        .error-state { padding: 40px; text-align: center; color: var(--status-critical); font-size: 0.88rem; }
 
         @media (max-width: 640px) {
             .stats-bar { grid-template-columns: 1fr 1fr; }
@@ -356,14 +383,9 @@
     <div class="container header-inner">
         <div class="logo">
             <div class="logo-icon">&#9889;</div>
-            <h1>Eco<span>Node</span></h1>
+            <h1>EcoNode <span>&mdash; Carbon-Aware Forecasting</span></h1>
         </div>
-        <div class="header-controls">
-            <select class="region-select" id="region-select">
-                <option value="US48">US Lower 48</option>
-                <option value="PJM">Mid-Atlantic (PJM)</option>
-                <option value="ERCO">Texas (ERCOT)</option>
-            </select>
+        <div class="header-meta-group">
             <div class="status-badge">
                 <div class="status-dot"></div>
                 <span id="pipeline-status">Loading...</span>
@@ -375,46 +397,65 @@
 
 <main class="container">
 
+    <!-- Filters -->
+    <div class="filter-bar">
+        <label class="filter-pill">
+            <span class="filter-pill-label">Region</span>
+            <select class="filter-select" id="region-select">
+                <option value="US48">US Lower 48</option>
+                <option value="PJM">Mid-Atlantic (PJM)</option>
+                <option value="ERCO">Texas (ERCOT)</option>
+                <option value="CISO">California (CAISO)</option>
+                <option value="MISO">Midwest (MISO)</option>
+                <option value="ISNE">New England (ISO-NE)</option>
+                <option value="NYIS">New York (NYISO)</option>
+                <option value="SWPP">Southwest Power Pool</option>
+                <option value="SOCO">Southern Company (Southeast)</option>
+                <option value="BPAT">Pacific Northwest (BPA)</option>
+            </select>
+        </label>
+    </div>
+
     <!-- Stats -->
     <div class="stats-bar">
         <div class="stat-card">
-            <div class="stat-label">Current Renewable %</div>
-            <div class="stat-value green" id="stat-current">--</div>
+            <div class="stat-label">Current renewable %</div>
+            <div class="stat-value" id="stat-current">--</div>
             <div class="stat-sub" id="stat-current-sub">Loading...</div>
         </div>
         <div class="stat-card">
-            <div class="stat-label">48h Forecast Avg</div>
-            <div class="stat-value blue" id="stat-avg">--</div>
+            <div class="stat-label">48h forecast avg</div>
+            <div class="stat-value" id="stat-avg">--</div>
             <div class="stat-sub">Across forecast period</div>
         </div>
         <div class="stat-card">
-            <div class="stat-label">Carbon Intensity</div>
-            <div class="stat-value purple" id="stat-carbon">--</div>
+            <div class="stat-label">Carbon intensity</div>
+            <div class="stat-value" id="stat-carbon">--</div>
             <div class="stat-sub" id="stat-carbon-sub">gCO2/kWh current</div>
         </div>
         <div class="stat-card">
-            <div class="stat-label">Best Green Window</div>
-            <div class="stat-value green" id="stat-best-window">--</div>
+            <div class="stat-label">Best green window</div>
+            <div class="stat-value" id="stat-best-window">--</div>
             <div class="stat-sub" id="stat-best-time">Optimal block</div>
         </div>
         <div class="stat-card">
-            <div class="stat-label">Peak Renewable %</div>
-            <div class="stat-value amber" id="stat-peak">--</div>
+            <div class="stat-label">Peak renewable %</div>
+            <div class="stat-value" id="stat-peak">--</div>
             <div class="stat-sub" id="stat-peak-time">In forecast</div>
         </div>
         <div class="stat-card">
-            <div class="stat-label">Model Accuracy</div>
-            <div class="stat-value blue" id="stat-mae">--</div>
+            <div class="stat-label">Model accuracy</div>
+            <div class="stat-value" id="stat-mae">--</div>
             <div class="stat-sub" id="stat-mae-sub">MAE (last eval)</div>
         </div>
         <div class="stat-card">
-            <div class="stat-label">Forecast Improvement</div>
-            <div class="stat-value green" id="stat-skill">--</div>
+            <div class="stat-label">Forecast improvement</div>
+            <div class="stat-value" id="stat-skill">--</div>
             <div class="stat-sub" id="stat-skill-sub">vs repeat-yesterday</div>
         </div>
         <div class="stat-card">
-            <div class="stat-label">CO2 Savings</div>
-            <div class="stat-value green" id="stat-savings">--</div>
+            <div class="stat-label">CO2 savings</div>
+            <div class="stat-value" id="stat-savings">--</div>
             <div class="stat-sub" id="stat-savings-sub">Green windows vs avg</div>
         </div>
     </div>
@@ -422,24 +463,12 @@
     <!-- Forecast Chart -->
     <div class="chart-section">
         <div class="section-header">
-            <h2 class="section-title">48-Hour Forecast with Recent Actuals</h2>
+            <h2 class="section-title">48-hour forecast with recent actuals</h2>
             <div class="chart-legend">
-                <div class="legend-item">
-                    <div class="legend-dot" style="background: #22c55e;"></div>
-                    Forecast
-                </div>
-                <div class="legend-item">
-                    <div class="legend-dot" style="background: #3b82f6;"></div>
-                    Actuals
-                </div>
-                <div class="legend-item">
-                    <div class="legend-dot" style="background: rgba(34,197,94,0.12);"></div>
-                    Confidence
-                </div>
-                <div class="legend-item">
-                    <div class="legend-dot" style="background: rgba(34,197,94,0.3); border: 1px dashed #22c55e; width: 14px; height: 8px; border-radius: 2px;"></div>
-                    Green Windows
-                </div>
+                <div class="legend-item"><div class="legend-dot" style="background: var(--series-green);"></div>Forecast</div>
+                <div class="legend-item"><div class="legend-dot" style="background: var(--series-blue);"></div>Actuals</div>
+                <div class="legend-item"><div class="legend-dot" style="background: var(--series-green-wash);"></div>Confidence</div>
+                <div class="legend-item"><div class="legend-dot" style="background: var(--series-green-wash-strong);"></div>Green windows</div>
             </div>
         </div>
         <div class="chart-container" id="chart-wrapper">
@@ -454,16 +483,10 @@
     <!-- Carbon Intensity Chart -->
     <div class="chart-section">
         <div class="section-header">
-            <h2 class="section-title">Carbon Intensity Forecast (gCO2/kWh)</h2>
+            <h2 class="section-title">Carbon intensity forecast (gCO2/kWh)</h2>
             <div class="chart-legend">
-                <div class="legend-item">
-                    <div class="legend-dot" style="background: #a855f7;"></div>
-                    Forecast
-                </div>
-                <div class="legend-item">
-                    <div class="legend-dot" style="background: #64748b;"></div>
-                    Actuals
-                </div>
+                <div class="legend-item"><div class="legend-dot" style="background: var(--series-green);"></div>Forecast</div>
+                <div class="legend-item"><div class="legend-dot" style="background: var(--series-blue);"></div>Actuals</div>
             </div>
         </div>
         <div class="chart-container">
@@ -473,8 +496,8 @@
 
     <!-- Green Compute Windows -->
     <div class="windows-section">
-        <h2 class="section-title">Recommended Green Compute Windows</h2>
-        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">
+        <h2 class="section-title">Recommended green compute windows</h2>
+        <p class="section-subtitle">
             Schedule AWS batch workloads during these windows to minimize carbon footprint.
         </p>
         <div class="windows-grid" id="windows-grid">
@@ -488,22 +511,22 @@
     <!-- Model Accuracy -->
     <div class="chart-section">
         <div class="section-header">
-            <h2 class="section-title">Model Accuracy (Forecast vs Actuals)</h2>
+            <h2 class="section-title">Model accuracy (forecast vs actuals)</h2>
         </div>
         <div class="accuracy-grid" id="accuracy-grid">
             <div class="loading-state" style="padding:20px;">
                 <div class="spinner"></div>
             </div>
         </div>
-        <p style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 14px;" id="baseline-note"></p>
+        <p class="baseline-note" id="baseline-note"></p>
     </div>
 
     <!-- Region Insights -->
     <div class="chart-section">
         <div class="section-header">
-            <h2 class="section-title">Region Insights</h2>
+            <h2 class="section-title">Region insights</h2>
         </div>
-        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 4px;">
+        <p class="section-subtitle" style="margin-bottom: 14px;">
             Computed fresh from the last 60 days of grid history on every pipeline run.
         </p>
         <div class="accuracy-grid" id="insights-grid">
@@ -516,13 +539,13 @@
     <!-- History Table -->
     <div class="history-section">
         <div class="section-header">
-            <h2 class="section-title">Recent Grid History (Last 24h)</h2>
+            <h2 class="section-title">Recent grid history (last 24h)</h2>
         </div>
         <table>
             <thead>
                 <tr>
                     <th>Time (UTC)</th>
-                    <th>Total Gen (MWh)</th>
+                    <th>Total gen (MWh)</th>
                     <th>Wind (MWh)</th>
                     <th>Solar (MWh)</th>
                     <th>Renewable %</th>
@@ -550,6 +573,23 @@
 // Configuration
 const SUPABASE_URL = 'https://iaxqflytpfvmwofxatmn.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlheHFmbHl0cGZ2bXdvZnhhdG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMDkzOTAsImV4cCI6MjA5Nzc4NTM5MH0.7eWa1Z3j54U6cCU4qI2CUQOmsUVmQ27DIhGV4iyZtoU';
+
+// Chart palette — kept in sync with the CSS custom properties above.
+const COLOR = {
+    green: '#008300',
+    greenWash: 'rgba(0,131,0,0.08)',
+    greenWashStrong: 'rgba(0,131,0,0.20)',
+    blue: '#2a78d6',
+    blueWash: 'rgba(42,120,214,0.10)',
+    good: '#0ca30c',
+    warning: '#b8860b',
+    critical: '#d03b3b',
+    grid: '#e1e0d9',
+    muted: '#898781',
+    surface: '#ffffff',
+    ink: '#0b0b0b',
+    inkSecondary: '#52514e',
+};
 
 let currentRegion = 'US48';
 let forecastChart = null;
@@ -586,9 +626,16 @@ function fmtDateTime(iso) {
 }
 
 function pctColor(v) {
-    if (v >= 30) return '#22c55e';
-    if (v >= 20) return '#f59e0b';
-    return '#ef4444';
+    if (v >= 30) return COLOR.good;
+    if (v >= 20) return COLOR.warning;
+    return COLOR.critical;
+}
+
+function carbonColor(v) {
+    if (v == null) return COLOR.inkSecondary;
+    if (v < 300) return COLOR.good;
+    if (v < 450) return COLOR.warning;
+    return COLOR.critical;
 }
 
 // Region switcher
@@ -659,11 +706,13 @@ function renderStats(forecasts, windows, history, metrics) {
         document.getElementById('stat-mae-sub').textContent =
             `MAE | Coverage: ${m.coverage_80 != null ? m.coverage_80.toFixed(0) + '%' : '--'}`;
 
+        const skillEl = document.getElementById('stat-skill');
+        const skillSubEl = document.getElementById('stat-skill-sub');
         if (m.skill_score != null) {
             const pct = (m.skill_score * 100).toFixed(0);
-            document.getElementById('stat-skill').textContent = pct + '%';
-            document.getElementById('stat-skill-sub').textContent =
-                m.skill_score > 0 ? 'better than repeat-yesterday' : 'vs repeat-yesterday';
+            skillEl.textContent = (m.skill_score > 0 ? '+' : '') + pct + '%';
+            skillSubEl.textContent = m.skill_score > 0 ? 'better than repeat-yesterday' : 'vs repeat-yesterday';
+            skillSubEl.className = 'stat-sub ' + (m.skill_score > 0 ? 'delta-good' : 'delta-bad');
         }
     }
 
@@ -732,7 +781,7 @@ function renderForecastChart(forecasts, windows, history) {
                     label: 'Upper Bound',
                     data: upper,
                     borderColor: 'transparent',
-                    backgroundColor: 'rgba(34,197,94,0.08)',
+                    backgroundColor: COLOR.greenWash,
                     fill: '+1',
                     pointRadius: 0,
                     tension: 0.3,
@@ -741,7 +790,7 @@ function renderForecastChart(forecasts, windows, history) {
                     label: 'Lower Bound',
                     data: lower,
                     borderColor: 'transparent',
-                    backgroundColor: 'rgba(34,197,94,0.08)',
+                    backgroundColor: COLOR.greenWash,
                     fill: false,
                     pointRadius: 0,
                     tension: 0.3,
@@ -749,29 +798,30 @@ function renderForecastChart(forecasts, windows, history) {
                 {
                     label: 'Forecast',
                     data: forecastData,
-                    borderColor: '#22c55e',
-                    borderWidth: 2.5,
+                    borderColor: COLOR.green,
+                    borderWidth: 2,
                     pointRadius: 0,
-                    pointHoverRadius: 5,
-                    pointHoverBackgroundColor: '#22c55e',
+                    pointHoverRadius: 4,
+                    pointHoverBackgroundColor: COLOR.green,
+                    pointHoverBorderColor: COLOR.surface,
+                    pointHoverBorderWidth: 2,
                     tension: 0.3,
                     fill: false,
                 },
                 {
                     label: 'Actuals',
                     data: actualsData,
-                    borderColor: '#3b82f6',
+                    borderColor: COLOR.blue,
                     borderWidth: 2,
                     pointRadius: 1.5,
-                    pointBackgroundColor: '#3b82f6',
+                    pointBackgroundColor: COLOR.blue,
                     tension: 0.3,
                     fill: false,
-                    borderDash: [],
                 },
                 {
                     label: 'Green Window',
                     data: greenData,
-                    backgroundColor: 'rgba(34,197,94,0.25)',
+                    backgroundColor: COLOR.greenWashStrong,
                     borderColor: 'transparent',
                     fill: 'origin',
                     pointRadius: 0,
@@ -787,11 +837,12 @@ function renderForecastChart(forecasts, windows, history) {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: '#1e293b',
-                    titleColor: '#f1f5f9',
-                    bodyColor: '#94a3b8',
-                    borderColor: '#334155',
+                    backgroundColor: COLOR.surface,
+                    titleColor: COLOR.ink,
+                    bodyColor: COLOR.inkSecondary,
+                    borderColor: COLOR.grid,
                     borderWidth: 1,
+                    cornerRadius: 8,
                     padding: 12,
                     callbacks: {
                         title: (items) => {
@@ -814,15 +865,16 @@ function renderForecastChart(forecasts, windows, history) {
                 x: {
                     type: 'time',
                     time: { unit: 'hour', displayFormats: { hour: 'MMM d, ha' } },
-                    grid: { color: 'rgba(255,255,255,0.04)' },
-                    ticks: { color: '#64748b', maxTicksLimit: 12, font: { size: 11 } },
+                    grid: { color: COLOR.grid, drawTicks: false },
+                    border: { color: COLOR.grid },
+                    ticks: { color: COLOR.muted, maxTicksLimit: 12, font: { size: 11 } },
                 },
                 y: {
                     min: 0,
                     suggestedMax: 50,
-                    grid: { color: 'rgba(255,255,255,0.04)' },
-                    ticks: { color: '#64748b', callback: v => v + '%', font: { size: 11 } },
-                    title: { display: true, text: 'Renewable %', color: '#64748b' },
+                    grid: { color: COLOR.grid, drawTicks: false },
+                    border: { display: false },
+                    ticks: { color: COLOR.muted, callback: v => v + '%', font: { size: 11 } },
                 },
             },
         },
@@ -854,22 +906,19 @@ function renderCarbonChart(forecasts, history) {
                 {
                     label: 'Carbon Forecast',
                     data: forecastCarbon,
-                    borderColor: '#a855f7',
+                    borderColor: COLOR.green,
                     borderWidth: 2,
                     pointRadius: 0,
                     tension: 0.3,
-                    fill: {
-                        target: 'origin',
-                        above: 'rgba(168,85,247,0.08)',
-                    },
+                    fill: { target: 'origin', above: COLOR.greenWash },
                 },
                 {
                     label: 'Carbon Actual',
                     data: actualCarbon,
-                    borderColor: '#64748b',
+                    borderColor: COLOR.blue,
                     borderWidth: 2,
                     pointRadius: 1.5,
-                    pointBackgroundColor: '#64748b',
+                    pointBackgroundColor: COLOR.blue,
                     tension: 0.3,
                     fill: false,
                 },
@@ -882,11 +931,12 @@ function renderCarbonChart(forecasts, history) {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: '#1e293b',
-                    titleColor: '#f1f5f9',
-                    bodyColor: '#94a3b8',
-                    borderColor: '#334155',
+                    backgroundColor: COLOR.surface,
+                    titleColor: COLOR.ink,
+                    bodyColor: COLOR.inkSecondary,
+                    borderColor: COLOR.grid,
                     borderWidth: 1,
+                    cornerRadius: 8,
                     padding: 12,
                     callbacks: {
                         title: (items) => {
@@ -904,14 +954,15 @@ function renderCarbonChart(forecasts, history) {
                 x: {
                     type: 'time',
                     time: { unit: 'hour', displayFormats: { hour: 'MMM d, ha' } },
-                    grid: { color: 'rgba(255,255,255,0.04)' },
-                    ticks: { color: '#64748b', maxTicksLimit: 12, font: { size: 11 } },
+                    grid: { color: COLOR.grid, drawTicks: false },
+                    border: { color: COLOR.grid },
+                    ticks: { color: COLOR.muted, maxTicksLimit: 12, font: { size: 11 } },
                 },
                 y: {
                     min: 0,
-                    grid: { color: 'rgba(255,255,255,0.04)' },
-                    ticks: { color: '#64748b', font: { size: 11 } },
-                    title: { display: true, text: 'gCO2/kWh', color: '#64748b' },
+                    grid: { color: COLOR.grid, drawTicks: false },
+                    border: { display: false },
+                    ticks: { color: COLOR.muted, font: { size: 11 } },
                 },
             },
         },
@@ -960,7 +1011,7 @@ function renderAccuracy(metrics) {
 
     const m = metrics[0];
     const skillPct = m.skill_score != null ? (m.skill_score * 100).toFixed(0) + '%' : '--';
-    const skillColor = m.skill_score != null && m.skill_score > 0 ? 'color: var(--green-accent)' : '';
+    const skillColor = m.skill_score != null ? `color: ${m.skill_score > 0 ? 'var(--success-text)' : 'var(--status-critical)'}` : '';
     const hasCi = m.skill_score_ci_low != null && m.skill_score_ci_high != null;
     const ciText = hasCi
         ? `90% CI [${(m.skill_score_ci_low * 100).toFixed(0)}%, ${(m.skill_score_ci_high * 100).toFixed(0)}%]`
@@ -981,24 +1032,24 @@ function renderAccuracy(metrics) {
         </div>
         <div class="accuracy-card">
             <div class="metric-value" style="${skillColor}">${skillPct}</div>
-            <div class="metric-label">vs Persistence Baseline</div>
-            <div class="metric-label" style="text-transform:none; letter-spacing:0; margin-top:4px;">${ciText}</div>
+            <div class="metric-label">vs persistence baseline</div>
+            <div class="metric-label" style="margin-top:4px;">${ciText}</div>
         </div>
         <div class="accuracy-card">
             <div class="metric-value">${m.skill_vs_climatology != null ? (m.skill_vs_climatology * 100).toFixed(0) + '%' : '--'}</div>
-            <div class="metric-label">vs Climatology Baseline</div>
+            <div class="metric-label">vs climatology baseline</div>
         </div>
         <div class="accuracy-card">
             <div class="metric-value">${m.coverage_80 != null ? m.coverage_80.toFixed(0) + '%' : '--'}</div>
-            <div class="metric-label">Interval Coverage</div>
+            <div class="metric-label">Interval coverage</div>
         </div>
         <div class="accuracy-card">
             <div class="metric-value">${m.sample_size || '--'}</div>
-            <div class="metric-label">Sample Size</div>
+            <div class="metric-label">Sample size</div>
         </div>
         <div class="accuracy-card">
             <div class="metric-value" style="font-size:0.9rem;">${m.run_date || '--'}</div>
-            <div class="metric-label">Last Eval</div>
+            <div class="metric-label">Last eval</div>
         </div>
     `;
 
@@ -1022,42 +1073,42 @@ function renderInsights(insights) {
         cards.push(`
             <div class="accuracy-card">
                 <div class="metric-value">${String(i.peak_hour_utc).padStart(2, '0')}:00</div>
-                <div class="metric-label">Peak Hour (UTC)</div>
+                <div class="metric-label">Peak hour (UTC)</div>
             </div>`);
     }
     if (i.best_weekday) {
         cards.push(`
             <div class="accuracy-card">
                 <div class="metric-value" style="font-size:1.1rem;">${i.best_weekday}</div>
-                <div class="metric-label">Best Weekday</div>
+                <div class="metric-label">Best weekday</div>
             </div>`);
     }
     if (i.temp_correlation != null) {
         cards.push(`
             <div class="accuracy-card">
                 <div class="metric-value">${i.temp_correlation.toFixed(2)}</div>
-                <div class="metric-label">Temp Correlation</div>
+                <div class="metric-label">Temp correlation</div>
             </div>`);
     }
     if (i.wind_correlation != null) {
         cards.push(`
             <div class="accuracy-card">
                 <div class="metric-value">${i.wind_correlation.toFixed(2)}</div>
-                <div class="metric-label">Wind Correlation</div>
+                <div class="metric-label">Wind correlation</div>
             </div>`);
     }
     if (i.autocorr_lag1 != null) {
         cards.push(`
             <div class="accuracy-card">
                 <div class="metric-value">${i.autocorr_lag1.toFixed(2)}</div>
-                <div class="metric-label">Lag-1 Autocorrelation</div>
+                <div class="metric-label">Lag-1 autocorrelation</div>
             </div>`);
     }
     if (i.co2_saved_kg_example != null) {
         cards.push(`
             <div class="accuracy-card">
-                <div class="metric-value" style="color: var(--green-accent);">${i.co2_saved_kg_example.toFixed(2)} kg</div>
-                <div class="metric-label">CO2 Saved / Example Job</div>
+                <div class="metric-value" style="color: var(--success-text);">${i.co2_saved_kg_example.toFixed(2)} kg</div>
+                <div class="metric-label">CO2 saved / example job</div>
             </div>`);
     }
 
@@ -1099,7 +1150,7 @@ function renderHistory(history) {
                         </div>
                     </div>
                 </td>
-                <td style="color:${ci && ci < 300 ? '#22c55e' : ci && ci < 450 ? '#f59e0b' : '#ef4444'}; font-weight:600;">
+                <td style="color:${carbonColor(ci)}; font-weight:600;">
                     ${ci != null ? Math.round(ci) : '--'}
                 </td>
             </tr>
@@ -1114,7 +1165,7 @@ function renderPipelineStatus(runs) {
     if (runs.length === 0) { el.textContent = 'No runs yet'; return; }
 
     const run = runs[0];
-    el.textContent = run.status === 'success' ? 'Pipeline Healthy' : run.status;
+    el.textContent = run.status === 'success' ? 'Pipeline healthy' : run.status;
 
     if (run.completed_at) {
         const d = new Date(run.completed_at);
