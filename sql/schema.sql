@@ -72,6 +72,10 @@ CREATE TABLE IF NOT EXISTS model_metrics (
     coverage_80     DOUBLE PRECISION,
     sample_size     INTEGER,
     skill_score     DOUBLE PRECISION,
+    skill_score_ci_low   DOUBLE PRECISION,
+    skill_score_ci_high  DOUBLE PRECISION,
+    climatology_mae      DOUBLE PRECISION,
+    skill_vs_climatology DOUBLE PRECISION,
     model_version   TEXT NOT NULL DEFAULT 'prophet-v2-weather',
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
 
@@ -80,6 +84,30 @@ CREATE TABLE IF NOT EXISTS model_metrics (
 
 CREATE INDEX IF NOT EXISTS idx_model_metrics_region
     ON model_metrics (region, run_date DESC);
+
+-- Computed insights per region per day (replaces the old EDA notebook —
+-- these are real numbers produced by analysis.py on every pipeline run)
+CREATE TABLE IF NOT EXISTS region_insights (
+    id                    BIGSERIAL PRIMARY KEY,
+    region                TEXT NOT NULL,
+    run_date              DATE NOT NULL,
+    peak_hour_utc         INTEGER,
+    peak_hour_avg_pct     DOUBLE PRECISION,
+    best_weekday          TEXT,
+    temp_correlation      DOUBLE PRECISION,
+    cloud_correlation     DOUBLE PRECISION,
+    wind_correlation      DOUBLE PRECISION,
+    autocorr_lag1         DOUBLE PRECISION,
+    forecastability_note  TEXT,
+    co2_saved_kg_example  DOUBLE PRECISION,
+    co2_example_desc      TEXT,
+    created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    CONSTRAINT uq_region_insights_region_date UNIQUE (region, run_date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_region_insights_region
+    ON region_insights (region, run_date DESC);
 
 -- Pipeline run metadata for observability
 CREATE TABLE IF NOT EXISTS pipeline_runs (
@@ -102,15 +130,18 @@ ALTER TABLE forecasts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE green_windows ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pipeline_runs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE model_metrics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE region_insights ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Public read access" ON grid_history FOR SELECT USING (true);
 CREATE POLICY "Public read access" ON forecasts FOR SELECT USING (true);
 CREATE POLICY "Public read access" ON green_windows FOR SELECT USING (true);
 CREATE POLICY "Public read access" ON pipeline_runs FOR SELECT USING (true);
 CREATE POLICY "Public read access" ON model_metrics FOR SELECT USING (true);
+CREATE POLICY "Public read access" ON region_insights FOR SELECT USING (true);
 
 CREATE POLICY "Service write access" ON grid_history FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Service write access" ON forecasts FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Service write access" ON green_windows FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Service write access" ON pipeline_runs FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Service write access" ON model_metrics FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Service write access" ON region_insights FOR ALL USING (true) WITH CHECK (true);
