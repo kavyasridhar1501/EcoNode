@@ -13,7 +13,7 @@ EIA API (hourly grid data)    Open-Meteo (weather)
 GitHub Actions (daily cron) ──▶ pipeline.py ──▶ analysis.py
     │                              │                │
     │  10 regions (US48,           │  Prophet +     │  hourly/weekly profiles,
-    │  PJM, ERCOT, CAISO...)       │  weather        │  weather correlations,
+    │  PJM, ERCOT, AZPS...)        │  weather        │  weather correlations,
     │                              │  regressors,    │  forecastability
     │                              │  2 baselines    │  diagnostics, CO2 impact
     ▼                              ▼                ▼
@@ -111,7 +111,7 @@ The pipeline processes ten real US grid balancing authorities — the same `resp
 | **Lower 48 (US)** | US48 | National aggregate: balanced mix of gas, coal, nuclear, wind, solar | 550 gCO2/kWh |
 | **Mid-Atlantic (PJM)** | PJM | Nuclear baseload, natural gas, moderate wind | 500 gCO2/kWh |
 | **Texas (ERCOT)** | ERCO | Strong wind penetration, natural gas dominant | 500 gCO2/kWh |
-| **California (CAISO)** | CISO | Heavy solar penetration, steep midday ramp | 400 gCO2/kWh |
+| **Arizona (APS)** | AZPS | Solar-heavy with nuclear (Palo Verde) + gas baseload | 450 gCO2/kWh |
 | **Midwest (MISO)** | MISO | Coal/gas heavy, growing wind fleet | 520 gCO2/kWh |
 | **New England (ISO-NE)** | ISNE | Gas + nuclear, limited renewables | 350 gCO2/kWh |
 | **New York (NYISO)** | NYIS | Gas-heavy downstate, hydro upstate | 380 gCO2/kWh |
@@ -120,6 +120,8 @@ The pipeline processes ten real US grid balancing authorities — the same `resp
 | **Pacific Northwest (BPA)** | BPAT | Hydro-dominant — see note below | 90 gCO2/kWh |
 
 Each region is modeled independently with its own weather regressors sourced from a representative geographic coordinate, and gets its own row in every table (`model_metrics`, `region_insights`, `green_windows`, ...).
+
+**Why CAISO isn't here.** California was tried twice and dropped both times. It was in the original region set, replaced with PJM per an earlier commit ("CAISO's extreme solar volatility is inherently unforecastable"), then briefly re-added during the 10-region expansion — where it backtested at MAE 28.76pp, -59% skill vs. the climatology baseline, and, worse, produced *negative* CO2 savings (its "green windows" carried a higher average carbon intensity than the region's overall forecast average — the opposite of what the feature is for). CAISO's renewable share swings from ~0% to 100% within a day because solar so thoroughly dominates its mix; this Prophet setup can't track that swing reliably even with the logit-transform option (`use_logit` in `pipeline.py`) built for exactly this case. Arizona (APS) is the replacement: also solar-heavy and western, but its nuclear (Palo Verde) + gas baseload keeps the daily swing inside a forecastable range.
 
 **Known limitation:** `renewable_percentage` only counts wind + solar (`(wind_mwh + solar_mwh) / total_mwh`), because that's what the pipeline can forecast with a diurnal/weather-driven model — hydro and nuclear don't have the same predictable daily cycle. That means a hydro-heavy region like BPA will show a *low* renewable percentage despite having one of the cleanest grids in the country. BPA's emission factor is set low to compensate (its non-wind/solar generation is mostly hydro, not fossil), but the renewable % and green-window numbers for hydro/nuclear-heavy regions should be read as "wind/solar share," not "how clean is this grid."
 

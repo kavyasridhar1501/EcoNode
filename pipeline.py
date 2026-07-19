@@ -75,11 +75,21 @@ REGIONS = {
         "daily_fourier": 10,
         "weekly_fourier": 3,
     },
-    "CISO": {
-        "name": "California (CAISO)",
-        "lat": 38.58,
-        "lon": -121.49,
-        "carbon_factor": 400,
+    "AZPS": {
+        "name": "Arizona (APS)",
+        "lat": 33.45,
+        "lon": -112.07,
+        # AZPS is solar-heavy but, unlike CAISO, most of its non-wind/solar
+        # generation is nuclear (Palo Verde) and gas rather than solar alone —
+        # CAISO was tried here first and dropped (see git history: "Replace
+        # CAISO with PJM — CAISO's extreme solar volatility is inherently
+        # unforecastable"). Its renewable share swings from ~0% to 100% daily,
+        # which this Prophet setup couldn't track (MAE 28.76pp, -59% skill vs
+        # a plain climatology baseline). AZPS's nuclear/gas baseload should
+        # damp that swing to something forecastable; carbon factor set lower
+        # than a pure-fossil region to reflect the nuclear baseload (clean but
+        # not counted as "renewable" here, same caveat as BPA's hydro).
+        "carbon_factor": 450,
         "changepoint_prior_scale": 0.05,
         "seasonality_mode": "multiplicative",
         "interval_width": 0.80,
