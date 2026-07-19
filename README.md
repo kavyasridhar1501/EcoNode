@@ -10,19 +10,22 @@ An end-to-end, zero-maintenance MLOps pipeline that ingests live US electrical g
 EIA API (hourly grid data)    Open-Meteo (weather)
     │                              │
     ▼                              ▼
-GitHub Actions (daily cron) ──▶ pipeline.py
-    │                              │
-    │  3 regions (US48,            │  Prophet + weather regressors
-    │  PJM, ERCOT)                 │  48-hour outlook per region
-    │                              │  model evaluation (MAE/RMSE)
-    ▼                              ▼
-Supabase PostgreSQL ◀──── history + forecasts + green windows + metrics
+GitHub Actions (daily cron) ──▶ pipeline.py ──▶ analysis.py
+    │                              │                │
+    │  3 regions (US48,            │  Prophet +     │  hourly/weekly profiles,
+    │  PJM, ERCOT)                 │  weather        │  weather correlations,
+    │                              │  regressors,    │  forecastability
+    │                              │  2 baselines    │  diagnostics, CO2 impact
+    ▼                              ▼                ▼
+Supabase PostgreSQL ◀──── history + forecasts + green windows + metrics + insights
     │
     ▼
 GitHub Pages (index.html) ──▶ Multi-region Chart.js dashboard
 ```
 
-**Zero local execution.** All ML training runs inside GitHub Actions. The dashboard is pure static HTML/JS served from GitHub Pages.
+**Zero local execution.** All ML training and analysis runs inside GitHub Actions on every scheduled run — not in a notebook someone has to remember to open. The dashboard is pure static HTML/JS served from GitHub Pages.
+
+A separate [`tests.yml`](.github/workflows/tests.yml) workflow runs the pytest suite on every push/PR, independent of the daily data pipeline.
 
 ## Data Science Methodology
 
@@ -60,6 +63,15 @@ Every pipeline run performs holdout backtesting — training on all-but-last-168
 
 Metrics are stored per region per day in the `model_metrics` table, enabling accuracy trend analysis and model drift detection over time.
 
+**Two baselines, not one.** A skill score against a single naive baseline is easy to game by picking a weak baseline. Every backtest compares Prophet against:
+
+- **Persistence** — repeat the value from 24 hours ago
+- **Climatology** — mean renewable % for that (weekday, hour) bucket, computed from the training window
+
+If Prophet can't beat climatology, the weather regressors and Fourier seasonality aren't adding value for that region, and the dashboard's "vs Climatology Baseline" card will show it.
+
+**Skill score has a confidence interval, not just a point estimate.** `analysis.bootstrap_skill_ci()` bootstraps the paired (model, baseline) errors 1,000x to produce a 90% CI on the skill score — a "45% better than baseline" number on a 168-point holdout week means little without knowing whether that's distinguishable from sampling noise.
+
 ### Data Quality Pipeline
 
 Before training, every ingested batch passes through validation:
@@ -79,18 +91,16 @@ A **sliding window algorithm** scans the 48-hour forecast to find optimal comput
 3. Selects the top 3 non-overlapping windows
 4. Computes average carbon intensity per window for cost-of-carbon comparison
 
-### Exploratory Data Analysis
+### Region Insights (`analysis.py`)
 
-The `notebooks/eda.ipynb` Jupyter notebook provides:
+This used to be a Jupyter notebook. Notebooks don't run themselves, and this one used to sit with every cell unexecuted — no output, no evidence any of it had actually been run against real data. `analysis.py` is a plain Python module of pure, unit-tested functions that runs as a real pipeline step on every scheduled run, and writes its results to Supabase's `region_insights` table so they show up on the live dashboard, not just in a file nobody opens:
 
-- **Time-series visualization** — renewable percentage trends per region
-- **Seasonal decomposition** — STL decomposition (via Statsmodels) separating trend, daily seasonality, and residual components
-- **Daily/weekly seasonality profiling** — hour-of-day and day-of-week aggregated patterns with confidence bands
-- **Distribution analysis** — renewable % and carbon intensity histograms per region
-- **Weather correlation analysis** — scatter plots with OLS trend lines and Pearson correlation coefficients for each weather variable
-- **Correlation heatmaps** — multi-variable correlation matrices (renewable %, temperature, cloud cover, wind speed)
-- **Regional comparison** — box plots and overlaid hourly profiles across ISO regions
-- **Model performance tracking** — MAE/RMSE/coverage trends over time
+- **Hour-of-day / day-of-week profiling** — peak generation hour and best weekday per region
+- **Weather correlation** — Pearson correlation of renewable % against temperature, cloud cover, wind speed
+- **Forecastability diagnostic** — lag-1 autocorrelation of the renewable % series. A smooth, solar-driven diurnal curve is highly self-similar hour to hour; a wind-dominant mix ramps less predictably. This is what actually explains *why* one region's MAE is consistently worse than another's, instead of just reporting the gap.
+- **Absolute CO2 impact** — translates the abstract carbon-intensity delta between a green window and the grid average into kilograms of CO2 saved for an example workload (a 300W job run for 4 hours), so the number means something outside a percentage.
+
+Every function in `analysis.py` is covered by `tests/test_analysis.py` with synthetic data (a known diurnal curve, pure noise, a perfectly repeating pattern) so the statistics can be checked against a known-correct answer, not just "does it run."
 
 ## Multi-Region Support
 
@@ -108,16 +118,23 @@ Each region is modeled independently with its own weather regressors sourced fro
 
 ```
 ├── .github/workflows/
-│   └── pipeline.yml              # Daily cron GitHub Actions workflow
+│   ├── pipeline.yml               # Daily cron: ingest, train, forecast, analyze
+│   └── tests.yml                  # pytest on every push/PR
 ├── sql/
-│   ├── schema.sql                # Full Supabase schema (5 tables + RLS)
-│   └── migrate_v2.sql            # Migration for existing v1 users
-├── notebooks/
-│   ├── eda.ipynb                 # Exploratory data analysis notebook
-│   └── requirements.txt          # Notebook-specific dependencies
-├── pipeline.py                   # Multi-region pipeline with weather + eval
-├── index.html                    # Static dashboard for GitHub Pages
-├── requirements.txt              # Python dependencies for GitHub Actions
+│   ├── schema.sql                 # Full Supabase schema (6 tables + RLS)
+│   ├── migrate_v2.sql             # Migration for v1 -> v2 users
+│   ├── migrate_v3.sql             # Migration for v2 -> v3 users
+│   └── migrate_v4.sql             # Migration for v3 -> v4 users (insights, CIs)
+├── tests/
+│   ├── conftest.py                # Stubs Prophet/Supabase for fast unit tests
+│   ├── test_pipeline.py           # Data quality, carbon math, green windows
+│   └── test_analysis.py           # Statistics in analysis.py, against synthetic data
+├── pipeline.py                    # Multi-region pipeline with weather + eval
+├── analysis.py                    # Region insights, computed every run (was a notebook)
+├── index.html                     # Static dashboard for GitHub Pages
+├── requirements.txt               # Python dependencies for the pipeline
+├── requirements-dev.txt           # Test-only dependencies
+├── pytest.ini
 └── README.md
 ```
 
@@ -135,7 +152,13 @@ Each region is modeled independently with its own weather regressors sourced fro
 
 6. **Green Windows:** Sliding window algorithm finds the top 3 contiguous 4-hour blocks with the highest average predicted renewable percentage and lowest carbon intensity.
 
-7. **Dashboard:** Region-selectable static page with forecast vs actuals overlay, carbon intensity chart, green window cards with CO2 estimates, model accuracy metrics, and recent grid history.
+7. **Region Insights:** `analysis.py` computes peak generation hour, best weekday, weather correlations, a forecastability diagnostic (autocorrelation), and an absolute CO2-savings example from the same run's data, and writes them to `region_insights`.
+
+8. **Dashboard:** Region-selectable static page with forecast vs actuals overlay, carbon intensity chart, green window cards with CO2 estimates, model accuracy metrics (including both baselines and the skill score CI), region insights, and recent grid history.
+
+## Real-World Impact
+
+Percentages are easy to report and easy to ignore. To make the carbon savings concrete: for an example 300W GPU job run for 4 hours, `analysis.co2_savings_example()` converts the carbon-intensity delta between a region's best green window and its grid average into kilograms of CO2 actually saved by scheduling in that window — shown per-region on the dashboard's Insights panel. Swap in your own workload's wattage and duration to size the impact for a real deployment.
 
 ## Model Performance
 
@@ -151,6 +174,8 @@ Current backtest results (168-hour holdout, evaluated daily):
 - **Interval Coverage** = % of actuals within Prophet's Bayesian uncertainty bands (target: ~80%)
 - **CO2 Savings** = carbon reduction from scheduling in green windows vs. grid average
 
+The dashboard now additionally reports each region's skill score against a **climatology baseline** and a **90% bootstrap CI** on the persistence skill score — see [Model Evaluation & Monitoring](#model-evaluation--monitoring). ERCOT's substantially higher MAE isn't just reported: `region_insights.forecastability_note` explains it via lag-1 autocorrelation — ERCOT's wind-heavy mix ramps less predictably hour to hour than the more solar-driven regions.
+
 ## Dashboard
 
 The interactive dashboard provides:
@@ -160,5 +185,15 @@ The interactive dashboard provides:
 - **48-hour forecast chart** — predicted renewable % with confidence bands, actuals overlay, and green window highlighting
 - **Carbon intensity chart** — separate gCO2/kWh time series with forecast and actuals
 - **Green compute window cards** — top 3 optimal 4-hour blocks ranked by renewable %, with carbon intensity estimates
-- **Model accuracy panel** — MAE, RMSE, MAPE, interval coverage, sample size, last evaluation date
+- **Model accuracy panel** — MAE, RMSE, MAPE, interval coverage, sample size, skill vs. two baselines with a confidence interval, last evaluation date
+- **Region insights panel** — peak hour, best weekday, weather correlations, forecastability note, absolute CO2 savings for an example workload
 - **Grid history table** — last 24 hours of actual generation data with color-coded renewable % bars
+
+## Testing
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+`tests/test_pipeline.py` and `tests/test_analysis.py` unit test the pure functions — data validation, carbon intensity math, green window selection, and every statistic in `analysis.py` — against synthetic data with known-correct answers (a perfect diurnal curve, pure noise, a perfectly repeating weekly pattern). `tests/conftest.py` stubs out Prophet and Supabase so the suite runs in under a second with no network access and no compiled Stan backend; it's testing the pipeline's logic, not re-testing Prophet or Postgres. CI runs this on every push and PR via `.github/workflows/tests.yml`, separate from the daily data pipeline.

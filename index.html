@@ -495,6 +495,22 @@
                 <div class="spinner"></div>
             </div>
         </div>
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 14px;" id="baseline-note"></p>
+    </div>
+
+    <!-- Region Insights -->
+    <div class="chart-section">
+        <div class="section-header">
+            <h2 class="section-title">Region Insights</h2>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 4px;">
+            Computed fresh from the last 60 days of grid history on every pipeline run.
+        </p>
+        <div class="accuracy-grid" id="insights-grid">
+            <div class="loading-state" style="padding:20px;">
+                <div class="spinner"></div>
+            </div>
+        </div>
     </div>
 
     <!-- History Table -->
@@ -585,12 +601,13 @@ document.getElementById('region-select').addEventListener('change', (e) => {
 async function loadDashboard() {
     try {
         const r = currentRegion;
-        const [forecasts, windows, history, runs, metrics] = await Promise.all([
+        const [forecasts, windows, history, runs, metrics, insights] = await Promise.all([
             sbGet('forecasts', `region=eq.${r}&order=forecast_time.asc&limit=48`),
             sbGet('green_windows', `region=eq.${r}&order=rank.asc&limit=3`),
             sbGet('grid_history', `region=eq.${r}&order=timestamp_utc.desc&limit=24`),
             sbGet('pipeline_runs', 'order=started_at.desc&limit=1'),
             sbGet('model_metrics', `region=eq.${r}&order=run_date.desc&limit=1`),
+            sbGet('region_insights', `region=eq.${r}&order=run_date.desc&limit=1`),
         ]);
 
         renderStats(forecasts, windows, history, metrics);
@@ -598,6 +615,7 @@ async function loadDashboard() {
         renderCarbonChart(forecasts, history);
         renderWindows(windows);
         renderAccuracy(metrics);
+        renderInsights(insights);
         renderHistory(history);
         renderPipelineStatus(runs);
     } catch (err) {
@@ -932,15 +950,22 @@ function renderWindows(windows) {
 
 function renderAccuracy(metrics) {
     const grid = document.getElementById('accuracy-grid');
+    const note = document.getElementById('baseline-note');
 
     if (metrics.length === 0) {
         grid.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; padding:12px;">No evaluation data yet. Metrics appear after the second pipeline run.</div>';
+        note.textContent = '';
         return;
     }
 
     const m = metrics[0];
     const skillPct = m.skill_score != null ? (m.skill_score * 100).toFixed(0) + '%' : '--';
     const skillColor = m.skill_score != null && m.skill_score > 0 ? 'color: var(--green-accent)' : '';
+    const hasCi = m.skill_score_ci_low != null && m.skill_score_ci_high != null;
+    const ciText = hasCi
+        ? `90% CI [${(m.skill_score_ci_low * 100).toFixed(0)}%, ${(m.skill_score_ci_high * 100).toFixed(0)}%]`
+        : '';
+
     grid.innerHTML = `
         <div class="accuracy-card">
             <div class="metric-value">${m.mae != null ? m.mae.toFixed(2) : '--'}</div>
@@ -956,7 +981,12 @@ function renderAccuracy(metrics) {
         </div>
         <div class="accuracy-card">
             <div class="metric-value" style="${skillColor}">${skillPct}</div>
-            <div class="metric-label">Forecast Improvement</div>
+            <div class="metric-label">vs Persistence Baseline</div>
+            <div class="metric-label" style="text-transform:none; letter-spacing:0; margin-top:4px;">${ciText}</div>
+        </div>
+        <div class="accuracy-card">
+            <div class="metric-value">${m.skill_vs_climatology != null ? (m.skill_vs_climatology * 100).toFixed(0) + '%' : '--'}</div>
+            <div class="metric-label">vs Climatology Baseline</div>
         </div>
         <div class="accuracy-card">
             <div class="metric-value">${m.coverage_80 != null ? m.coverage_80.toFixed(0) + '%' : '--'}</div>
@@ -971,6 +1001,76 @@ function renderAccuracy(metrics) {
             <div class="metric-label">Last Eval</div>
         </div>
     `;
+
+    note.textContent = (m.climatology_mae != null)
+        ? `Two baselines compared: persistence (repeat value from 24h ago) and climatology (mean by weekday/hour bucket, MAE ${m.climatology_mae.toFixed(2)}pp). Prophet's MAE is ${m.mae != null ? m.mae.toFixed(2) : '--'}pp — the "vs" cards above show how much of an edge the model actually has over each.`
+        : '';
+}
+
+function renderInsights(insights) {
+    const grid = document.getElementById('insights-grid');
+
+    if (insights.length === 0) {
+        grid.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; padding:12px;">No insights yet. Computed after the next pipeline run.</div>';
+        return;
+    }
+
+    const i = insights[0];
+    const cards = [];
+
+    if (i.peak_hour_utc != null) {
+        cards.push(`
+            <div class="accuracy-card">
+                <div class="metric-value">${String(i.peak_hour_utc).padStart(2, '0')}:00</div>
+                <div class="metric-label">Peak Hour (UTC)</div>
+            </div>`);
+    }
+    if (i.best_weekday) {
+        cards.push(`
+            <div class="accuracy-card">
+                <div class="metric-value" style="font-size:1.1rem;">${i.best_weekday}</div>
+                <div class="metric-label">Best Weekday</div>
+            </div>`);
+    }
+    if (i.temp_correlation != null) {
+        cards.push(`
+            <div class="accuracy-card">
+                <div class="metric-value">${i.temp_correlation.toFixed(2)}</div>
+                <div class="metric-label">Temp Correlation</div>
+            </div>`);
+    }
+    if (i.wind_correlation != null) {
+        cards.push(`
+            <div class="accuracy-card">
+                <div class="metric-value">${i.wind_correlation.toFixed(2)}</div>
+                <div class="metric-label">Wind Correlation</div>
+            </div>`);
+    }
+    if (i.autocorr_lag1 != null) {
+        cards.push(`
+            <div class="accuracy-card">
+                <div class="metric-value">${i.autocorr_lag1.toFixed(2)}</div>
+                <div class="metric-label">Lag-1 Autocorrelation</div>
+            </div>`);
+    }
+    if (i.co2_saved_kg_example != null) {
+        cards.push(`
+            <div class="accuracy-card">
+                <div class="metric-value" style="color: var(--green-accent);">${i.co2_saved_kg_example.toFixed(2)} kg</div>
+                <div class="metric-label">CO2 Saved / Example Job</div>
+            </div>`);
+    }
+
+    grid.innerHTML = cards.join('') || '<div style="color:var(--text-muted); font-size:0.85rem; padding:12px;">Not enough data yet.</div>';
+
+    const noteParts = [];
+    if (i.forecastability_note) noteParts.push(i.forecastability_note);
+    if (i.co2_example_desc && i.co2_saved_kg_example != null) {
+        noteParts.push(`CO2 estimate assumes a ${i.co2_example_desc}.`);
+    }
+    if (noteParts.length) {
+        grid.innerHTML += `<p style="grid-column: 1 / -1; color: var(--text-secondary); font-size: 0.82rem; margin-top: 4px;">${noteParts.join(' ')}</p>`;
+    }
 }
 
 function renderHistory(history) {

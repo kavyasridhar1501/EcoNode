@@ -17,6 +17,8 @@ import requests
 from prophet import Prophet
 from supabase import create_client, Client
 
+import analysis
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -24,9 +26,11 @@ logging.basicConfig(
 log = logging.getLogger("econode")
 
 # Configuration
-EIA_API_KEY = os.environ["EIA_API_KEY"]
-SUPABASE_URL = os.environ["SUPABASE_URL"]
-SUPABASE_SERVICE_KEY = os.environ["SUPABASE_SERVICE_KEY"]
+# Read lazily (not with os.environ[...] at import time) so this module — and its
+# pure functions — can be imported and unit tested without real credentials set.
+EIA_API_KEY = os.environ.get("EIA_API_KEY")
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
 
 EIA_BASE = "https://api.eia.gov/v2"
 LOOKBACK_DAYS = 60
@@ -78,6 +82,8 @@ OPEN_METEO_FORECAST = "https://api.open-meteo.com/v1/forecast"
 
 
 def supabase_client() -> Client:
+    if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
+        raise RuntimeError("SUPABASE_URL and SUPABASE_SERVICE_KEY must be set")
     return create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 
@@ -689,14 +695,27 @@ def backtest_model(history_df: pd.DataFrame, region: str, config: dict, sb: Clie
 
         baseline_start = len(df) - test_hours - 24
         baseline_end = baseline_start + n
+        skill_ci = None
         if baseline_start >= 0 and baseline_end <= len(df):
             baseline_pred = df.iloc[baseline_start:baseline_end]["renewable_percentage"].values
             baseline_errors = baseline_pred - actual
             baseline_mae = float(np.mean(np.abs(baseline_errors)))
             skill_score = round(1.0 - (mae / baseline_mae), 4) if baseline_mae > 0 else None
+            skill_ci = analysis.bootstrap_skill_ci(errors, baseline_errors)
         else:
             skill_score = None
             baseline_mae = 0
+
+        # Second baseline: climatology (mean by weekday/hour bucket). If Prophet
+        # can't beat this cheap lookup table, the weather regressors and Fourier
+        # seasonality aren't earning their keep for this region.
+        climatology = analysis.climatology_baseline(train, test.iloc[:n])
+        climatology_mae = climatology["mae"] if climatology else None
+        skill_vs_climatology = (
+            round(1.0 - (mae / climatology_mae), 4)
+            if climatology_mae and climatology_mae > 0
+            else None
+        )
 
         now = datetime.now(timezone.utc)
         metrics = {
@@ -708,14 +727,20 @@ def backtest_model(history_df: pd.DataFrame, region: str, config: dict, sb: Clie
             "coverage_80": round(coverage, 2),
             "sample_size": n,
             "skill_score": skill_score,
+            "skill_score_ci_low": round(skill_ci[0], 4) if skill_ci else None,
+            "skill_score_ci_high": round(skill_ci[1], 4) if skill_ci else None,
+            "climatology_mae": round(climatology_mae, 4) if climatology_mae is not None else None,
+            "skill_vs_climatology": skill_vs_climatology,
             "model_version": "prophet-v2-weather",
         }
 
         sb.table("model_metrics").upsert(metrics, on_conflict="region,run_date").execute()
 
         log.info(
-            "[%s] Backtest: MAE=%.2f RMSE=%.2f Coverage=%.1f%% Skill=%.4f (n=%d)",
-            region, mae, rmse, coverage, skill_score or 0, n,
+            "[%s] Backtest: MAE=%.2f RMSE=%.2f Coverage=%.1f%% Skill=%.4f (CI %s) vs climatology=%.4f (n=%d)",
+            region, mae, rmse, coverage, skill_score or 0,
+            f"[{skill_ci[0]:.2f}, {skill_ci[1]:.2f}]" if skill_ci else "n/a",
+            skill_vs_climatology or 0, n,
         )
         return metrics
 
@@ -773,9 +798,23 @@ def upsert_green_windows(sb: Client, df: pd.DataFrame, region: str) -> int:
     return len(records)
 
 
+# 8b. Region Insights (replaces the old, never-executed EDA notebook)
+
+def upsert_region_insights(sb: Client, insights: dict) -> None:
+    sb.table("region_insights").upsert(insights, on_conflict="region,run_date").execute()
+    log.info(
+        "[%s] Insights: peak_hour=%s best_weekday=%s autocorr=%s co2_saved_kg=%s",
+        insights["region"], insights.get("peak_hour_utc"), insights.get("best_weekday"),
+        insights.get("autocorr_lag1"), insights.get("co2_saved_kg_example"),
+    )
+
+
 # 9. Pipeline Orchestrator
 
 def run_pipeline():
+    if not EIA_API_KEY:
+        raise RuntimeError("EIA_API_KEY must be set")
+
     run_id = str(uuid.uuid4())[:8]
     sb = supabase_client()
 
@@ -797,7 +836,7 @@ def run_pipeline():
             total_ingested += upsert_history(sb, history_df)
 
             log.info("[%s] Step 2: Backtest evaluation (holdout last 48h)", region)
-            backtest_model(history_df, region, config, sb)
+            backtest_metrics = backtest_model(history_df, region, config, sb)
 
             log.info("[%s] Step 3: Weather-enhanced forecasting", region)
             forecast_df = train_and_forecast(history_df, region, config)
@@ -806,6 +845,12 @@ def run_pipeline():
             log.info("[%s] Step 4: Green window detection", region)
             windows_df = find_green_windows(forecast_df)
             total_windows += upsert_green_windows(sb, windows_df, region)
+
+            log.info("[%s] Step 5: Compute region insights", region)
+            insights = analysis.build_region_insights(
+                history_df, region, config["name"], backtest_metrics, forecast_df, windows_df
+            )
+            upsert_region_insights(sb, insights)
 
             if not forecast_df.empty and not windows_df.empty:
                 avg_carbon_all = float(forecast_df["carbon_intensity_gco2kwh"].mean())
