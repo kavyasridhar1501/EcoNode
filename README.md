@@ -12,8 +12,8 @@ EIA API (hourly grid data)    Open-Meteo (weather)
     ▼                              ▼
 GitHub Actions (daily cron) ──▶ pipeline.py ──▶ analysis.py
     │                              │                │
-    │  3 regions (US48,            │  Prophet +     │  hourly/weekly profiles,
-    │  PJM, ERCOT)                 │  weather        │  weather correlations,
+    │  10 regions (US48,           │  Prophet +     │  hourly/weekly profiles,
+    │  PJM, ERCOT, CAISO...)       │  weather        │  weather correlations,
     │                              │  regressors,    │  forecastability
     │                              │  2 baselines    │  diagnostics, CO2 impact
     ▼                              ▼                ▼
@@ -104,15 +104,24 @@ Every function in `analysis.py` is covered by `tests/test_analysis.py` with synt
 
 ## Multi-Region Support
 
-The pipeline processes three US Independent System Operator (ISO) regions, each with distinct generation mixes:
+The pipeline processes ten real US grid balancing authorities — the same `respondent` codes the EIA API uses — each with a distinct generation mix and its own independently-trained model:
 
-| Region | ISO | Characteristics | Emission Factor |
+| Region | Code | Characteristics | Emission Factor |
 |---|---|---|---|
-| **US48** | National | Balanced mix of gas, coal, nuclear, wind, solar | 550 gCO2/kWh |
-| **PJM** | PJM Interconnection | Nuclear baseload, natural gas, moderate wind | 500 gCO2/kWh |
-| **ERCO** | ERCOT (Texas) | Strong wind penetration, natural gas dominant | 500 gCO2/kWh |
+| **Lower 48 (US)** | US48 | National aggregate: balanced mix of gas, coal, nuclear, wind, solar | 550 gCO2/kWh |
+| **Mid-Atlantic (PJM)** | PJM | Nuclear baseload, natural gas, moderate wind | 500 gCO2/kWh |
+| **Texas (ERCOT)** | ERCO | Strong wind penetration, natural gas dominant | 500 gCO2/kWh |
+| **California (CAISO)** | CISO | Heavy solar penetration, steep midday ramp | 400 gCO2/kWh |
+| **Midwest (MISO)** | MISO | Coal/gas heavy, growing wind fleet | 520 gCO2/kWh |
+| **New England (ISO-NE)** | ISNE | Gas + nuclear, limited renewables | 350 gCO2/kWh |
+| **New York (NYISO)** | NYIS | Gas-heavy downstate, hydro upstate | 380 gCO2/kWh |
+| **Southwest Power Pool** | SWPP | Coal + one of the highest wind penetrations in the US | 480 gCO2/kWh |
+| **Southern Company (Southeast)** | SOCO | Coal/gas dominant, minimal wind/solar | 550 gCO2/kWh |
+| **Pacific Northwest (BPA)** | BPAT | Hydro-dominant — see note below | 90 gCO2/kWh |
 
-Each region is modeled independently with its own weather regressors sourced from a representative geographic coordinate.
+Each region is modeled independently with its own weather regressors sourced from a representative geographic coordinate, and gets its own row in every table (`model_metrics`, `region_insights`, `green_windows`, ...).
+
+**Known limitation:** `renewable_percentage` only counts wind + solar (`(wind_mwh + solar_mwh) / total_mwh`), because that's what the pipeline can forecast with a diurnal/weather-driven model — hydro and nuclear don't have the same predictable daily cycle. That means a hydro-heavy region like BPA will show a *low* renewable percentage despite having one of the cleanest grids in the country. BPA's emission factor is set low to compensate (its non-wind/solar generation is mostly hydro, not fossil), but the renewable % and green-window numbers for hydro/nuclear-heavy regions should be read as "wind/solar share," not "how clean is this grid."
 
 ## Repository Structure
 
@@ -162,15 +171,9 @@ Percentages are easy to report and easy to ignore. To make the carbon savings co
 
 ## Model Performance
 
-Current backtest results (168-hour holdout, evaluated daily):
+Backtest results (168-hour holdout, evaluated daily) are per-region and change every run — a static table here goes stale immediately, and with ten regions it's no longer one table anyone would want to hand-maintain. **The live numbers are always current on the [dashboard](https://kavyasridhar1501.github.io/EcoNode/)'s Model Accuracy panel** for whichever region is selected.
 
-| Region | MAE (pp) | Forecast Improvement | Interval Coverage | CO2 Savings |
-|---|---|---|---|---|
-| **US Lower 48** | 1.59 | 45% | 85% | 11% |
-| **Mid-Atlantic (PJM)** | 2.08 | 16% | 86% | 6% |
-| **Texas (ERCOT)** | 5.99 | 29% | 80% | 23% |
-
-- **Forecast Improvement** = skill score vs. persistence (repeat-yesterday) baseline
+- **Forecast Improvement** = skill score vs. persistence (repeat-yesterday) baseline, with a 90% bootstrap CI — see [Model Evaluation & Monitoring](#model-evaluation--monitoring). This number is currently *negative* for all three of the original regions, meaning Prophet is presently being beaten by "repeat yesterday's value" on live data. That's a real finding, not a typo — worth investigating (likely candidates: the multiplicative-seasonality + weather-regressor setup overfitting to the backtest window, or a recent data/timezone issue) before trusting the forecast for scheduling decisions.
 - **Interval Coverage** = % of actuals within Prophet's Bayesian uncertainty bands (target: ~80%)
 - **CO2 Savings** = carbon reduction from scheduling in green windows vs. grid average
 
@@ -180,7 +183,7 @@ The dashboard now additionally reports each region's skill score against a **cli
 
 The interactive dashboard provides:
 
-- **Region selector** — switch between US48, PJM, and ERCOT
+- **Region selector** — a filter control in the main content area (not tucked in the header) covering all ten regions
 - **Real-time stats** — current renewable %, forecast average, carbon intensity, peak %, model accuracy
 - **48-hour forecast chart** — predicted renewable % with confidence bands, actuals overlay, and green window highlighting
 - **Carbon intensity chart** — separate gCO2/kWh time series with forecast and actuals

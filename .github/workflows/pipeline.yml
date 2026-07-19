@@ -13,7 +13,9 @@ permissions:
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 10 regions x (EIA + weather ingestion, 2 Prophet fits, analysis) needs
+    # more headroom than the original 3-region budget.
+    timeout-minutes: 40
 
     env:
       EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
