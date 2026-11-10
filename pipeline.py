@@ -6,10 +6,12 @@ Runs entirely in GitHub Actions. Reads from EIA API v2 + Open-Meteo, writes to S
 """
 
 import os
+import socket
 import sys
 import uuid
 import logging
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlparse
 
 import numpy as np
 import pandas as pd
@@ -175,7 +177,28 @@ OPEN_METEO_FORECAST = "https://api.open-meteo.com/v1/forecast"
 def supabase_client() -> Client:
     if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
         raise RuntimeError("SUPABASE_URL and SUPABASE_SERVICE_KEY must be set")
+    check_supabase_reachable(SUPABASE_URL)
     return create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+
+def check_supabase_reachable(url: str) -> None:
+    """Fail fast with an actionable message if the Supabase host doesn't resolve.
+
+    Free-tier Supabase projects are paused after a period of inactivity, and a
+    paused project's hostname stops resolving in DNS. Without this check the run
+    dies deep inside httpx with a bare "Name or service not known".
+    """
+    host = urlparse(url).hostname
+    if not host:
+        raise RuntimeError("SUPABASE_URL is not a valid URL (host part missing)")
+    try:
+        socket.getaddrinfo(host, 443)
+    except socket.gaierror as exc:
+        raise RuntimeError(
+            f"Cannot resolve Supabase host '{host}' ({exc}). The project is most "
+            "likely paused for inactivity (free tier) or was deleted. Restore it "
+            "from the Supabase dashboard, or check the SUPABASE_URL secret."
+        ) from exc
 
 
 # 1. EIA Data Ingestion
